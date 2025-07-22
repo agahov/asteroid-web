@@ -1,0 +1,6 @@
+---
+description: general rules for the project
+globs: true
+alwaysApply: false
+---
+i want implement simple Asteroid game on techstack bitecs and pixi.js
