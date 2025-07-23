@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
-import { defineQuery, removeEntity } from "bitecs";
-import { Position, Sprite, Velocity, Rotation, Input, Player, Lifetime, Collision, Asteroid, Bullet } from "./components";
+import { defineQuery, removeEntity, addComponent } from "bitecs";
+import { Position, Sprite, Velocity, Rotation, Input, Player, Lifetime, Collision, Asteroid, Bullet, RemoveMark } from "./components";
 import type { GameWorld } from "./world";
 import { getInputState } from "../input/input";
 import { createAsteroid } from "../game/createAsteroid";
@@ -121,6 +121,7 @@ export function asteroidSpawnerSystem(world: GameWorld, app: PIXI.Application) {
 }
 
 const lifetimeQuery = defineQuery([Lifetime]);
+const removeMarkQuery = defineQuery([RemoveMark]);
 
 export function lifetimeSystem(world: GameWorld, delta: number) {
   const ents = lifetimeQuery(world);
@@ -135,6 +136,20 @@ export function lifetimeSystem(world: GameWorld, delta: number) {
       }
       removeEntity(world, id);
     }
+  }
+}
+
+// Remove system - removes entities marked for removal
+export function removeSystem(world: GameWorld) {
+  const entities = removeMarkQuery(world);
+  
+  for (const id of entities) {
+    const sprite = world.pixiSprites.get(id);
+    if (sprite) {
+      sprite.destroy();
+      world.pixiSprites.delete(id);
+    }
+    removeEntity(world, id);
   }
 }
 
@@ -159,7 +174,7 @@ export function fireSystem(world: GameWorld, delta: number, app: PIXI.Applicatio
   fireCooldown = 0.3; // Fire every 0.3s
 }
 
-// Collision system - handles collision detection and response
+// Collision system - handles collision detection and marks entities for removal
 function collisionSystem(world: GameWorld) {
   const collisionQuery = defineQuery([Position, Collision]);
   const entities = collisionQuery(world);
@@ -187,23 +202,15 @@ function collisionSystem(world: GameWorld) {
       const collisionDistance = Collision.radius[entityA] + Collision.radius[entityB];
       
       if (distance < collisionDistance) {
-        // Handle collision based on entity types
-		removeEntityWithSprite(world, entityA);
-		removeEntityWithSprite(world, entityB);
-        //handleCollision(world, entityA, entityB);
+        // Mark entities for removal instead of removing them directly
+        addComponent(world, RemoveMark, entityA);
+        addComponent(world, RemoveMark, entityB);
       }
     }
   }
 }
 
-function removeEntityWithSprite(world: GameWorld, entity: number) {
-  const sprite = world.pixiSprites.get(entity);
-  if (sprite) {
-    sprite.destroy();
-    world.pixiSprites.delete(entity);
-  }
-  removeEntity(world, entity);
-}
+
 
 // Handle collision between two entities
 function handleCollision(world: GameWorld, entityA: number, entityB: number) {
@@ -273,6 +280,9 @@ export function runSystems(world: GameWorld, deltaTime: number, app: PIXI.Applic
   
   // Run collision system
   collisionSystem(world);
+  
+  // Run remove system to clean up marked entities
+  removeSystem(world);
   
   // Run wrap system
   wrapSystem(world, app);

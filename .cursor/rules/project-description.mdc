@@ -4,3 +4,20 @@ globs: true
 alwaysApply: false
 ---
 i want implement simple Asteroid game on techstack bitecs and pixi.js
+
+## ECS Component Management Rules
+
+When adding a new component to an entity, always use `addComponent(world, ComponentName, entityId)` from bitecs. Never use direct assignment like `ComponentName[entityId] = value` for adding components.
+
+**Correct way:**
+```typescript
+import { addComponent } from "bitecs";
+addComponent(world, RemoveMark, entityId);
+```
+
+**Incorrect way:**
+```typescript
+RemoveMark[entityId] = 1; // This is wrong for adding components
+```
+
+**Note:** Direct assignment is only for modifying existing component data, not for adding components to entities.

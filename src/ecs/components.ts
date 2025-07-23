@@ -38,6 +38,9 @@ export const Collision = defineComponent({
   mask: Types.ui8,      // Collision mask (what this entity can collide with)
 });
 
+// RemoveMark component for marking entities for removal
+export const RemoveMark = defineComponent();
+
 // Default export to ensure this is recognized as a module
 export default {
   Position,
@@ -49,4 +52,5 @@ export default {
   Asteroid,
   Bullet,
   Collision,
+  RemoveMark,
 };
