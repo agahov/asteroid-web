@@ -1,16 +1,17 @@
 import { addEntity, addComponent } from "bitecs";
 import { type GameWorld } from "../ecs/world";
 import * as PIXI from "pixi.js";
-import { Position, Velocity, Sprite, Asteroid, Rotation, Player, Input, Collision } from "../ecs/components";
+import { Position, Velocity, Sprite, Asteroid, Rotation, Player, Input, Collision, Health, Hiter } from "../ecs/components";
 import { COLLISION_GROUPS, COLLISION_MASKS } from "../ecs/collisionGroups";
 
 export function createAsteroid(world: GameWorld, app: PIXI.Application, options = {}) {
 	console.log("createAsteroid");
-  const { x = 0, y = 0, speed = 1, angle = Math.random() * Math.PI * 2 } = options as {
+  const { x = 0, y = 0, speed = 1, angle = Math.random() * Math.PI * 2, radius: customRadius } = options as {
     x?: number;
     y?: number;
     speed?: number;
     angle?: number;
+    radius?: number;
   };
 
   const ent = addEntity(world);
@@ -22,6 +23,8 @@ export function createAsteroid(world: GameWorld, app: PIXI.Application, options 
   addComponent(world, Sprite, ent);
   addComponent(world, Asteroid, ent);
   addComponent(world, Collision, ent);
+  addComponent(world, Health, ent);
+  addComponent(world, Hiter, ent);
   
   // Set component values
   Position.x[ent] = x;
@@ -35,12 +38,16 @@ export function createAsteroid(world: GameWorld, app: PIXI.Application, options 
   // Generate random asteroid shape
   const minRadius = 10;
   const maxRadius = 20;
-  const radius = minRadius + Math.random() * (maxRadius - minRadius);
+  const radius = customRadius || (minRadius + Math.random() * (maxRadius - minRadius));
   
   // Set collision properties
   Collision.radius[ent] = radius; // Use the same radius as visual
   Collision.group[ent] = COLLISION_GROUPS.ASTEROID;
   Collision.mask[ent] = COLLISION_MASKS.ASTEROID;
+  
+  // Set health properties
+  Health.current[ent] = 3; // Asteroids take 3 hits to destroy
+  Health.max[ent] = 3;
   
   // Generate 4-8 random points around the center
   const numPoints = 4 + Math.floor(Math.random() * 5); // 4 to 8 points

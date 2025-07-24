@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import { defineQuery, removeEntity, addComponent } from "bitecs";
-import { Position, Sprite, Velocity, Rotation, Input, Player, Lifetime, Collision, Asteroid, Bullet, RemoveMark } from "./components";
+import { Position, Sprite, Velocity, Rotation, Input, Player, Lifetime, Collision, Asteroid, Bullet, RemoveMark, Hiter, Damage, Health } from "./components";
 import type { GameWorld } from "./world";
 import { getInputState } from "../input/input";
 import { createAsteroid } from "../game/createAsteroid";
@@ -105,10 +105,14 @@ function renderSystem(world: GameWorld) {
   }
 }
 
-let initialized = false;
+let initialized = 0;
 
-export function asteroidSpawnerSystem(world: GameWorld, app: PIXI.Application) {
-  if (initialized) return;
+export function asteroidSpawnerSystem(world: GameWorld, deltaTime: number, app: PIXI.Application) {
+  if (initialized >= 0) {
+	initialized -= deltaTime;
+	return;
+  }
+  initialized = 30;
 
   for (let i = 0; i < 5; i++) {
     const x = Math.random() * app.screen.width;
@@ -117,7 +121,7 @@ export function asteroidSpawnerSystem(world: GameWorld, app: PIXI.Application) {
     createAsteroid(world, app, { x, y, speed });
   }
 
-  initialized = true;
+
 }
 
 const lifetimeQuery = defineQuery([Lifetime]);
@@ -135,6 +139,43 @@ export function lifetimeSystem(world: GameWorld, delta: number) {
         world.pixiSprites.delete(id);
       }
       removeEntity(world, id);
+    }
+  }
+}
+
+// Asteroid destroyed system - creates smaller asteroids when large ones are destroyed
+function asteroidDestroyedSystem(world: GameWorld, app: PIXI.Application) {
+  const asteroidDestroyedQuery = defineQuery([RemoveMark, Asteroid, Collision, Position, Velocity]);
+  const entities = asteroidDestroyedQuery(world);
+  
+  for (const id of entities) {
+    const currentRadius = Collision.radius[id];
+    const minRadius = 10; // Minimum radius for creating smaller asteroids
+    
+    // Only create smaller asteroids if the destroyed asteroid is large enough
+    if (currentRadius > minRadius) {
+      const numAsteroids = 2 + Math.floor(Math.random() * 3); // 2-4 asteroids
+      const newRadius = currentRadius * 0.6; // 60% of original size
+      
+      for (let i = 0; i < numAsteroids; i++) {
+        // Calculate random angle for the new asteroid's velocity
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1 + Math.random() * 2; // Random speed between 1-3
+        
+        // Calculate velocity based on original asteroid's velocity plus some randomness
+        const baseVelX = Velocity.x[id];
+        const baseVelY = Velocity.y[id];
+        const randomVelX = Math.cos(angle) * speed;
+        const randomVelY = Math.sin(angle) * speed;
+        
+        createAsteroid(world, app, {
+          x: Position.x[id],
+          y: Position.y[id],
+          speed: Math.sqrt((baseVelX + randomVelX) ** 2 + (baseVelY + randomVelY) ** 2),
+          angle: Math.atan2(baseVelY + randomVelY, baseVelX + randomVelX),
+          radius: newRadius
+        });
+      }
     }
   }
 }
@@ -174,37 +215,42 @@ export function fireSystem(world: GameWorld, delta: number, app: PIXI.Applicatio
   fireCooldown = 0.3; // Fire every 0.3s
 }
 
-// Collision system - handles collision detection and marks entities for removal
-function collisionSystem(world: GameWorld) {
-  const collisionQuery = defineQuery([Position, Collision]);
-  const entities = collisionQuery(world);
+// Hit system - handles collision detection and adds damage to entities
+function hitSystem(world: GameWorld) {
+  const hiterQuery = defineQuery([Position, Collision, Hiter]);
+  const targetQuery = defineQuery([Position, Collision]);
+  const hiters = hiterQuery(world);
+  const targets = targetQuery(world);
   
-  // Check each pair of entities for collisions
-  for (let i = 0; i < entities.length; i++) {
-    const entityA = entities[i];
-    
-    for (let j = i + 1; j < entities.length; j++) {
-      const entityB = entities[j];
+  // Check each hiter against all targets for collisions
+  for (const hiter of hiters) {
+    for (const target of targets) {
+      // Skip if hiter is trying to hit itself
+      if (hiter === target) continue;
       
       // Check if these entities can collide based on their groups and masks
-      const canCollide = (Collision.group[entityA] & Collision.mask[entityB]) !== 0 ||
-                        (Collision.group[entityB] & Collision.mask[entityA]) !== 0;
+      const canCollide = (Collision.group[hiter] & Collision.mask[target]) !== 0 ||
+                        (Collision.group[target] & Collision.mask[hiter]) !== 0;
       
       if (!canCollide) continue;
-	  console.log("Collision detected between", entityA, "and", entityB);
       
       // Calculate distance between entities
-      const dx = Position.x[entityA] - Position.x[entityB];
-      const dy = Position.y[entityA] - Position.y[entityB];
+      const dx = Position.x[hiter] - Position.x[target];
+      const dy = Position.y[hiter] - Position.y[target];
       const distance = Math.sqrt(dx * dx + dy * dy);
       
       // Check if they're colliding
-      const collisionDistance = Collision.radius[entityA] + Collision.radius[entityB];
+      const collisionDistance = Collision.radius[hiter] + Collision.radius[target];
       
       if (distance < collisionDistance) {
-        // Mark entities for removal instead of removing them directly
-        addComponent(world, RemoveMark, entityA);
-        addComponent(world, RemoveMark, entityB);
+        console.log("Hit detected between", hiter, "and", target);
+        
+        // Add damage component to the target
+        addComponent(world, Damage, target);
+        Damage.amount[target] = 1; // Default damage amount
+        
+        // Mark hiter for removal (e.g., bullets disappear after hitting)
+        addComponent(world, RemoveMark, hiter);
       }
     }
   }
@@ -212,55 +258,28 @@ function collisionSystem(world: GameWorld) {
 
 
 
-// Handle collision between two entities
-function handleCollision(world: GameWorld, entityA: number, entityB: number) {
-  // Get entity types
-  const isPlayerA = Player[entityA] !== undefined;
-  const isPlayerB = Player[entityB] !== undefined;
-  const isAsteroidA = Asteroid[entityA] !== undefined;
-  const isAsteroidB = Asteroid[entityB] !== undefined;
-  const isBulletA = Bullet[entityA] !== undefined;
-  const isBulletB = Bullet[entityB] !== undefined;
+// Damage system - processes damage and reduces health
+function damageSystem(world: GameWorld) {
+  const damageQuery = defineQuery([Damage, Health]);
+  const entities = damageQuery(world);
   
-  // Player vs Asteroid collision
-  if ((isPlayerA && isAsteroidB) || (isPlayerB && isAsteroidA)) {
-    const player = isPlayerA ? entityA : entityB;
-    const asteroid = isPlayerA ? entityB : entityA;
-    
-    // Remove the asteroid
-    removeEntity(world, asteroid);
-    const asteroidSprite = world.pixiSprites.get(asteroid);
-    if (asteroidSprite) {
-      asteroidSprite.destroy();
-      world.pixiSprites.delete(asteroid);
+  for (const id of entities) {
+    // Only process if damage amount is greater than 0
+    if (Damage.amount[id] > 0) {
+      // Reduce health by damage amount
+      Health.current[id] -= Damage.amount[id];
+      
+      console.log(`Entity ${id} took ${Damage.amount[id]} damage. Health: ${Health.current[id]}/${Health.max[id]}`);
+      
+      // Check if health is below 0
+      if (Health.current[id] <= 0) {
+        console.log(`Entity ${id} has died!`);
+        addComponent(world, RemoveMark, id);
+      }
+      
+      // Mark damage as processed by setting amount to 0
+      Damage.amount[id] = 0;
     }
-    
-    // TODO: Handle player damage/death
-    console.log("Player hit asteroid!");
-  }
-  
-  // Bullet vs Asteroid collision
-  if ((isBulletA && isAsteroidB) || (isBulletB && isAsteroidA)) {
-    const bullet = isBulletA ? entityA : entityB;
-    const asteroid = isBulletA ? entityB : entityA;
-    
-    // Remove both bullet and asteroid
-    removeEntity(world, bullet);
-    removeEntity(world, asteroid);
-    
-    const bulletSprite = world.pixiSprites.get(bullet);
-    if (bulletSprite) {
-      bulletSprite.destroy();
-      world.pixiSprites.delete(bullet);
-    }
-    
-    const asteroidSprite = world.pixiSprites.get(asteroid);
-    if (asteroidSprite) {
-      asteroidSprite.destroy();
-      world.pixiSprites.delete(asteroid);
-    }
-    
-    console.log("Bullet hit asteroid!");
   }
 }
 
@@ -272,14 +291,20 @@ export function runSystems(world: GameWorld, deltaTime: number, app: PIXI.Applic
   // Run player movement system
   playerMovementSystem(world, deltaTime);
 
-  asteroidSpawnerSystem(world, app);
+  asteroidSpawnerSystem(world, deltaTime, app);
 
   // Run movement system
   movementSystem(world, deltaTime);
   fireSystem(world, deltaTime, app);
   
-  // Run collision system
-  collisionSystem(world);
+  // Run hit system
+  hitSystem(world);
+  
+  // Run damage system
+  damageSystem(world);
+  
+  // Run asteroid destroyed system to create smaller asteroids
+  asteroidDestroyedSystem(world, app);
   
   // Run remove system to clean up marked entities
   removeSystem(world);

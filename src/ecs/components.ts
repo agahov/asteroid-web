@@ -41,6 +41,20 @@ export const Collision = defineComponent({
 // RemoveMark component for marking entities for removal
 export const RemoveMark = defineComponent();
 
+// Hiter component - entities that can deal damage
+export const Hiter = defineComponent();
+
+// Damage component - entities that have been hit and should take damage
+export const Damage = defineComponent({
+  amount: Types.f32,    // Amount of damage to deal
+});
+
+// Health component - entities that have health
+export const Health = defineComponent({
+  current: Types.f32,   // Current health
+  max: Types.f32,       // Maximum health
+});
+
 // Default export to ensure this is recognized as a module
 export default {
   Position,
@@ -53,4 +67,7 @@ export default {
   Bullet,
   Collision,
   RemoveMark,
+  Hiter,
+  Damage,
+  Health,
 };
