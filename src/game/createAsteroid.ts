@@ -1,7 +1,7 @@
 import { addEntity, addComponent } from "bitecs";
 import { type GameWorld } from "../ecs/world";
 import * as PIXI from "pixi.js";
-import { Position, Velocity, Sprite, Asteroid, Rotation, Player, Input, Collision, Health, Hiter } from "../ecs/components";
+import { Position, Velocity, Sprite, Asteroid, Rotation, Player, Input, Collision, Health, Hiter, Mass } from "../ecs/components";
 import { COLLISION_GROUPS, COLLISION_MASKS } from "../ecs/collisionGroups";
 
 export function createAsteroid(world: GameWorld, app: PIXI.Application, options = {}) {
@@ -25,6 +25,7 @@ export function createAsteroid(world: GameWorld, app: PIXI.Application, options 
   addComponent(world, Collision, ent);
   addComponent(world, Health, ent);
   addComponent(world, Hiter, ent);
+  addComponent(world, Mass, ent);
   
   // Set component values
   Position.x[ent] = x;
@@ -49,6 +50,9 @@ export function createAsteroid(world: GameWorld, app: PIXI.Application, options 
   Health.current[ent] = 3; // Asteroids take 3 hits to destroy
   Health.max[ent] = 3;
   
+  // Set mass properties - mass scales with radius (volume)
+  Mass.value[ent] = radius * 0.5; // Heavier asteroids are harder to move
+
   // Generate 4-8 random points around the center
   const numPoints = 4 + Math.floor(Math.random() * 5); // 4 to 8 points
   const points: number[] = [];

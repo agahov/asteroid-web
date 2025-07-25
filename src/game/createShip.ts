@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import { addEntity, addComponent } from "bitecs";
-import { Position, Velocity, Sprite, Player, Rotation, Input, Collision, Health } from "../ecs/components";
+import { Position, Velocity, Sprite, Player, Rotation, Input, Collision, Health, Mass } from "../ecs/components";
 import { type GameWorld } from "../ecs/world";
 import { COLLISION_GROUPS, COLLISION_MASKS } from "../ecs/collisionGroups";
 
@@ -17,6 +17,7 @@ export function createShip(world: GameWorld, app: PIXI.Application) {
   addComponent(world, Player, ship);
   addComponent(world, Collision, ship);
   addComponent(world, Health, ship);
+  addComponent(world, Mass, ship);
   
   // Set component values
   Position.x[ship] = app.screen.width / 2;
@@ -40,6 +41,9 @@ export function createShip(world: GameWorld, app: PIXI.Application) {
   // Set health properties
   Health.current[ship] = 5; // Player has 5 health
   Health.max[ship] = 5;
+
+  // Set mass properties
+  Mass.value[ship] = 1.0; // Ship has medium mass
 
   console.log('Ship components set:', {
     entity: ship,

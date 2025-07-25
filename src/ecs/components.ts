@@ -55,6 +55,17 @@ export const Health = defineComponent({
   max: Types.f32,       // Maximum health
 });
 
+// Mass component - affects physics calculations
+export const Mass = defineComponent({
+  value: Types.f32,     // Mass value (higher = more inertia, less affected by forces)
+});
+
+// Impulse component - temporary force applied to entities
+export const Impulse = defineComponent({
+  x: Types.f32,         // X component of impulse force
+  y: Types.f32,         // Y component of impulse force
+});
+
 // Default export to ensure this is recognized as a module
 export default {
   Position,
@@ -70,4 +81,6 @@ export default {
   Hiter,
   Damage,
   Health,
+  Mass,
+  Impulse,
 };

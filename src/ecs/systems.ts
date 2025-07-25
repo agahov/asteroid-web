@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import { defineQuery, removeEntity, addComponent } from "bitecs";
-import { Position, Sprite, Velocity, Rotation, Input, Player, Lifetime, Collision, Asteroid, Bullet, RemoveMark, Hiter, Damage, Health } from "./components";
+import { Position, Sprite, Velocity, Rotation, Input, Player, Lifetime, Collision, Asteroid, Bullet, RemoveMark, Hiter, Damage, Health, Mass, Impulse } from "./components";
 import type { GameWorld } from "./world";
 import { getInputState } from "../input/input";
 import { createAsteroid } from "../game/createAsteroid";
@@ -112,7 +112,7 @@ export function asteroidSpawnerSystem(world: GameWorld, deltaTime: number, app: 
 	initialized -= deltaTime;
 	return;
   }
-  initialized = 30;
+  initialized = 3000;
 
   for (let i = 0; i < 5; i++) {
     const x = Math.random() * app.screen.width;
@@ -217,8 +217,8 @@ export function fireSystem(world: GameWorld, delta: number, app: PIXI.Applicatio
 
 // Hit system - handles collision detection and adds damage to entities
 function hitSystem(world: GameWorld) {
-  const hiterQuery = defineQuery([Position, Collision, Hiter]);
-  const targetQuery = defineQuery([Position, Collision]);
+  const hiterQuery = defineQuery([Position, Collision, Hiter, Velocity, Mass]);
+  const targetQuery = defineQuery([Position, Collision, Velocity, Mass]);
   const hiters = hiterQuery(world);
   const targets = targetQuery(world);
   
@@ -248,6 +248,39 @@ function hitSystem(world: GameWorld) {
         // Add damage component to the target
         addComponent(world, Damage, target);
         Damage.amount[target] = 1; // Default damage amount
+        
+        // Apply impulse forces based on collision
+        const hiterMass = Mass.value[hiter] || 1;
+        const targetMass = Mass.value[target] || 1;
+        
+        // Calculate collision normal
+        const nx = dx / distance;
+        const ny = dy / distance;
+        
+        // Calculate relative velocity
+        const relativeVelX = Velocity.x[hiter] - Velocity.x[target];
+        const relativeVelY = Velocity.y[hiter] - Velocity.y[target];
+        
+        // Calculate impulse magnitude (simplified elastic collision)
+        const impulseMagnitude = Math.sqrt(relativeVelX * relativeVelX + relativeVelY * relativeVelY) * 0.5;
+        
+        // Apply impulse to both entities
+        if (!Impulse.x[hiter]) {
+          addComponent(world, Impulse, hiter);
+          Impulse.x[hiter] = 0;
+          Impulse.y[hiter] = 0;
+        }
+        if (!Impulse.x[target]) {
+          addComponent(world, Impulse, target);
+          Impulse.x[target] = 0;
+          Impulse.y[target] = 0;
+        }
+        
+        // Apply impulse in opposite directions
+        Impulse.x[hiter] -= nx * impulseMagnitude * targetMass;
+        Impulse.y[hiter] -= ny * impulseMagnitude * targetMass;
+        Impulse.x[target] += nx * impulseMagnitude * hiterMass;
+        Impulse.y[target] += ny * impulseMagnitude * hiterMass;
         
         // Mark hiter for removal (e.g., bullets disappear after hitting)
         addComponent(world, RemoveMark, hiter);
