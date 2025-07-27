@@ -60,6 +60,11 @@ export const Mass = defineComponent({
   value: Types.f32,     // Mass value (higher = more inertia, less affected by forces)
 });
 
+// Friction component - affects how quickly entities slow down
+export const Friction = defineComponent({
+  value: Types.f32,     // Friction factor (0-1, where 1 = no friction, 0 = complete stop)
+});
+
 // Impulse component - temporary force applied to entities
 export const Impulse = defineComponent({
   x: Types.f32,         // X component of impulse force
@@ -82,5 +87,6 @@ export default {
   Damage,
   Health,
   Mass,
+  Friction,
   Impulse,
 };

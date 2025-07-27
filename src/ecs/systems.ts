@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import { defineQuery, removeEntity, addComponent } from "bitecs";
-import { Position, Sprite, Velocity, Rotation, Input, Player, Lifetime, Collision, Asteroid, Bullet, RemoveMark, Hiter, Damage, Health, Mass, Impulse } from "./components";
+import { Position, Sprite, Velocity, Rotation, Input, Player, Lifetime, Collision, Asteroid, Bullet, RemoveMark, Hiter, Damage, Health, Mass, Friction, Impulse } from "./components";
 import type { GameWorld } from "./world";
 import { getInputState } from "../input/input";
 import { createAsteroid } from "../game/createAsteroid";
@@ -8,6 +8,7 @@ import { createBullet } from "../game/createBullet";
 
 const spriteQuery = defineQuery([Position, Sprite]);
 const moveQuery = defineQuery([Position, Velocity]);
+const frictionQuery = defineQuery([Position, Velocity, Friction]);
 const playerQuery = defineQuery([Position, Velocity, Rotation, Input, Player]);
 
 // Input system - updates input component based on keyboard state
@@ -31,7 +32,6 @@ function playerMovementSystem(world: GameWorld, deltaTime: number) {
     const rotationSpeed = 0.1; // radians per frame
     const acceleration = 0.5; // pixels per frame squared
     const maxSpeed = 5; // maximum speed in pixels per frame
-    const friction = 0.98; // friction factor
 
     // Handle rotation
     if (Input.left[id]) {
@@ -50,10 +50,6 @@ function playerMovementSystem(world: GameWorld, deltaTime: number) {
       Velocity.y[id] += thrustY;
     }
 
-    // Apply friction
-    Velocity.x[id] *= friction;
-    Velocity.y[id] *= friction;
-
     // Limit maximum speed
     const speed = Math.sqrt(Velocity.x[id] * Velocity.x[id] + Velocity.y[id] * Velocity.y[id]);
     if (speed > maxSpeed) {
@@ -69,6 +65,15 @@ function movementSystem(world: GameWorld, deltaTime: number) {
   for (const id of ents) {
     Position.x[id] += Velocity.x[id] * deltaTime;
     Position.y[id] += Velocity.y[id] * deltaTime;
+  }
+}
+
+// Friction system - applies friction to entities that have the Friction component
+function frictionSystem(world: GameWorld, deltaTime: number) {
+  const ents = frictionQuery(world);
+  for (const id of ents) {
+    Velocity.x[id] *= Friction.value[id];
+    Velocity.y[id] *= Friction.value[id];
   }
 }
 
@@ -107,6 +112,39 @@ function renderSystem(world: GameWorld) {
 
 let initialized = 0;
 
+// Predefined speed array with custom distribution:
+// 0 - 80%, 0.1 - 10%, 0.3 - 6%, 0.5 - 3%, 1.0 - 1%
+const SPEED_WEIGHTS = [
+  // 80 zeros (80%)
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 10 zeros
+  // 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 20 zeros
+  // 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 30 zeros
+  // 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 40 zeros
+  // 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 50 zeros
+  // 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 60 zeros
+  // 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 70 zeros
+  // 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 80 zeros
+  
+  // 10 values of 0.1 (10%)
+  0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+  
+  // 6 values of 0.3 (6%)
+  0.3, 0.3, 0.3, 0.3, 0.3, 0.3,
+  
+  // 3 values of 0.5 (3%)
+  0.5, 0.5, 0.5,
+  
+  // 1 value of 1.0 (1%)
+  1.0
+];
+
+// Utility function to generate speed with more dispersion towards zero
+function generateAsteroidSpeed(): number {
+  // Randomly select from the weighted array
+  const randomIndex = Math.floor(Math.random() * SPEED_WEIGHTS.length);
+  return SPEED_WEIGHTS[randomIndex];
+}
+
 export function asteroidSpawnerSystem(world: GameWorld, deltaTime: number, app: PIXI.Application) {
   if (initialized >= 0) {
 	initialized -= deltaTime;
@@ -117,7 +155,7 @@ export function asteroidSpawnerSystem(world: GameWorld, deltaTime: number, app: 
   for (let i = 0; i < 5; i++) {
     const x = Math.random() * app.screen.width;
     const y = Math.random() * app.screen.height;
-    const speed = 0.5 + Math.random() * 1;
+    const speed = generateAsteroidSpeed(); // Range 0 to 1 with dispersion towards zero
     createAsteroid(world, app, { x, y, speed });
   }
 
@@ -160,7 +198,7 @@ function asteroidDestroyedSystem(world: GameWorld, app: PIXI.Application) {
       for (let i = 0; i < numAsteroids; i++) {
         // Calculate random angle for the new asteroid's velocity
         const angle = Math.random() * Math.PI * 2;
-        const speed = 1 + Math.random() * 2; // Random speed between 1-3
+        const speed = generateAsteroidSpeed(); // Range 0 to 1 with dispersion towards zero
         
         // Calculate velocity based on original asteroid's velocity plus some randomness
         const baseVelX = Velocity.x[id];
@@ -326,6 +364,9 @@ export function runSystems(world: GameWorld, deltaTime: number, app: PIXI.Applic
 
   asteroidSpawnerSystem(world, deltaTime, app);
 
+  // Run friction system before movement
+  frictionSystem(world, deltaTime);
+  
   // Run movement system
   movementSystem(world, deltaTime);
   fireSystem(world, deltaTime, app);
