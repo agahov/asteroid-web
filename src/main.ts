@@ -4,6 +4,7 @@ import { setupGame } from "./game/setupGame";
 import { runSystems } from "./ecs/systems";
 import { setupInput } from "./input/input";
 import { ProfilingUI } from "./ui/profilingUI";
+import { LayerManager } from "./ui/LayerManager";
 
 async function initGame() {
   const app = new PIXI.Application();
@@ -17,6 +18,9 @@ async function initGame() {
   app.renderer.resize(window.innerWidth, window.innerHeight);
 
   document.body.appendChild(app.canvas);
+
+  // Initialize LayerManager
+  LayerManager.getInstance().initialize(app);
 
   // Setup input system
   setupInput();
@@ -35,4 +39,4 @@ async function initGame() {
   });
 }
 
-initGame().catch(console.error);
+initGame();

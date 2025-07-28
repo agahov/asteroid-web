@@ -3,6 +3,7 @@ import { Position, Velocity, Sprite, Bullet, Lifetime, Rotation, Asteroid, Colli
 import * as PIXI from "pixi.js";
 import { type GameWorld } from "../ecs/world";
 import { COLLISION_GROUPS, COLLISION_MASKS } from "../ecs/collisionGroups";
+import { LayerManager, LAYERS } from "../ui/LayerManager";
 
 export function createBullet(world: GameWorld, app: PIXI.Application, originId: number) {
 console.log("createBullet", originId);
@@ -52,8 +53,9 @@ console.log("createBullet", originId);
 
   // Create visual
   const graphic = new PIXI.Graphics();
-  graphic.circle(0, 0, 2);
-  graphic.fill(0xffffff);
+  graphic
+    .circle(0, 0, 2)
+    .fill(0xffffff);
 
   console.log('Bullet components set:', {
     entity: bullet,
@@ -65,12 +67,13 @@ console.log("createBullet", originId);
     lifetime: Lifetime.timeLeft[bullet],
   });
 
-
   const sprite = new PIXI.Sprite(app.renderer.generateTexture(graphic));
   sprite.anchor.set(0.5);
   sprite.x = Position.x[bullet];
   sprite.y = Position.y[bullet];
-  app.stage.addChild(sprite);
+  
+  // Attach to GAME_OBJECTS layer using LayerManager
+  LayerManager.getInstance().attachToLayer(LAYERS.GAME_OBJECTS, sprite);
 
   world.pixiSprites.set(bullet, sprite);
 }

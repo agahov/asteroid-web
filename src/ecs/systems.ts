@@ -183,7 +183,7 @@ export function asteroidSpawnerSystem(world: GameWorld, dt: number, app: PIXI.Ap
   // initialized = 30000000;
   console.log('DEBUG - after reset - initialized:', initialized);
 
-  for (let i = 0; i < 200; i++) {
+  for (let i = 0; i < 100; i++) {
     const x = Math.random() * app.screen.width;
     const y = Math.random() * app.screen.height;
     const speed = generateAsteroidSpeed();
@@ -398,7 +398,7 @@ function damageSystem(world: GameWorld) {
   
   for (const id of entities) {
     // Only process if damage amount is greater than 0
-    if (Damage.amount[id] > 0) {
+    //if (Damage.amount[id] > 0) {
       // Reduce health by damage amount
       Health.current[id] -= Damage.amount[id];
       
@@ -411,8 +411,8 @@ function damageSystem(world: GameWorld) {
       }
       
       // Mark damage as processed by setting amount to 0
-      Damage.amount[id] = 0;
-    }
+      //Damage.amount[id] = 0;
+    //}
     removeComponent(world, Damage, id);
   }
   

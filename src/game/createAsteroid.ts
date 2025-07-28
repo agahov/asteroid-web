@@ -3,6 +3,7 @@ import { type GameWorld } from "../ecs/world";
 import * as PIXI from "pixi.js";
 import { Position, Velocity, Sprite, Asteroid, Rotation, Player, Input, Collision, Health, Hiter, Mass, Friction, CollisionDelay } from "../ecs/components";
 import { COLLISION_GROUPS, COLLISION_MASKS } from "../ecs/collisionGroups";
+import { LayerManager, LAYERS } from "../ui/LayerManager";
 
 export function createAsteroid(world: GameWorld, app: PIXI.Application, options = {}) {
 	console.log("createAsteroid");
@@ -80,9 +81,10 @@ export function createAsteroid(world: GameWorld, app: PIXI.Application, options 
   }
 
   const graphic = new PIXI.Graphics();
-  graphic.stroke({ width: 2, color: 0xffffff });
-  graphic.poly(points);
-  graphic.fill(0xff0000);
+  graphic
+    .poly(points)
+    //.stroke({ width: 2, color: 0xffffff })
+    .fill(0xff0000);
 
 //   console.log('Asteroid components set:', {
 //     entity: ent,
@@ -103,7 +105,8 @@ export function createAsteroid(world: GameWorld, app: PIXI.Application, options 
   // Make asteroid semi-transparent when it has collision delay
   sprite.alpha = 0.5;
   
-  app.stage.addChild(sprite);
+  // Attach to GAME_OBJECTS layer using LayerManager
+  LayerManager.getInstance().attachToLayer(LAYERS.GAME_OBJECTS, sprite);
 
   //world.pixiSprites[ent] = sprite;
   world.pixiSprites.set(ent, sprite);

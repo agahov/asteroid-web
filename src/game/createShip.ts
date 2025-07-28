@@ -3,6 +3,7 @@ import { addEntity, addComponent } from "bitecs";
 import { Position, Velocity, Sprite, Player, Rotation, Input, Collision, Health, Mass, Friction, Hiter } from "../ecs/components";
 import { type GameWorld } from "../ecs/world";
 import { COLLISION_GROUPS, COLLISION_MASKS } from "../ecs/collisionGroups";
+import { LayerManager, LAYERS } from "../ui/LayerManager";
 
 export function createShip(world: GameWorld, app: PIXI.Application) {
   const ship = addEntity(world);
@@ -51,7 +52,7 @@ export function createShip(world: GameWorld, app: PIXI.Application) {
   Friction.value[ship] = 0.98; // Ship has medium friction
 
   // Set damage value
-  Hiter.value[ship] = 50; // Ship deals 50 damage (high damage for ramming)
+  Hiter.value[ship] = 50;
 
   console.log('Ship components set:', {
     entity: ship,
@@ -64,23 +65,20 @@ export function createShip(world: GameWorld, app: PIXI.Application) {
   });
 
   const graphic = new PIXI.Graphics();
-  //graphic.beginFill(0xffffff);
-  graphic.moveTo(10, 0);
-  graphic.lineTo(-10, 7);
-  graphic.lineTo(-10, -7);
-  graphic.lineTo(10, 0);
-
-  
-  graphic.fill(0xffffff);
-  //graphic.endFill();
-  
-  //graphic.endFill();
+  graphic
+    .moveTo(10, 0)
+    .lineTo(-10, 7)
+    .lineTo(-10, -7)
+    .lineTo(10, 0)
+    .fill(0xffffff);
 
   const sprite = new PIXI.Sprite(app.renderer.generateTexture(graphic));
   sprite.anchor.set(0.5);
   sprite.x = Position.x[ship];
   sprite.y = Position.y[ship];
-  app.stage.addChild(sprite);
+  
+  // Attach to GAME_OBJECTS layer using LayerManager
+  LayerManager.getInstance().attachToLayer(LAYERS.GAME_OBJECTS, sprite);
 
   world.pixiSprites.set(ship, sprite);
 }

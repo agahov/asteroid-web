@@ -1,6 +1,6 @@
 	import * as PIXI from "pixi.js";
 	import { getProfilingData } from "../ecs/profiling";
-// Removed the import of getProfilingData as it causes an error and is not used in the provided code
+import { LayerManager, LAYERS } from "./LayerManager";
 
 export class ProfilingUI {
   private container: PIXI.Container;
@@ -12,12 +12,12 @@ export class ProfilingUI {
     this.container = new PIXI.Container();
     this.container.sortableChildren = true;
     
-    // Create background
+    // Create background with modern PixiJS v8 API
     this.background = new PIXI.Graphics();
-    this.background.fill({ color: 0x000000, alpha: 0.8 });
-    //this.background.drawRoundedRect(0, 0, 300, 200, 8);
-    //this.background.fill();
-    this.background.zIndex = 1000;
+    this.background
+      .rect(0, 0, 300, 200)
+      .fill({ color: 0x000000, alpha: 0.8 });
+    this.background.zIndex = 10000;
     
     // Create text
     this.text = new PIXI.Text('', {
@@ -28,7 +28,7 @@ export class ProfilingUI {
     });
     this.text.x = 10;
     this.text.y = 10;
-    this.text.zIndex = 1001;
+    this.text.zIndex = 10001;
     
     this.container.addChild(this.background);
     this.container.addChild(this.text);
@@ -37,7 +37,8 @@ export class ProfilingUI {
     this.container.x = app.screen.width - 320;
     this.container.y = 20;
     
-    app.stage.addChild(this.container);
+    // Attach to UI layer using LayerManager
+    LayerManager.getInstance().attachToLayer(LAYERS.UI, this.container);
     
     // Toggle visibility with 'P' key
     document.addEventListener('keydown', (e) => {
@@ -61,7 +62,7 @@ export class ProfilingUI {
     displayText += `📊 Entities: ${data.totalEntities}\n`;
     displayText += `⏱️  Frame: ${data.frameTime.toFixed(1)}ms\n`;
     displayText += `🎮 FPS: ${pixiFPS ? pixiFPS.toFixed(1) : data.fps.toFixed(1)}\n\n`;
-    displayText += `�� SYSTEMS:\n`;
+    displayText += `⚙️ SYSTEMS:\n`;
     
     // Show top 5 slowest systems
     const sortedSystems = [...data.systems]
