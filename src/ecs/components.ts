@@ -42,7 +42,9 @@ export const Collision = defineComponent({
 export const RemoveMark = defineComponent();
 
 // Hiter component - entities that can deal damage
-export const Hiter = defineComponent();
+export const Hiter = defineComponent({
+  value: Types.f32,     // Amount of damage this entity deals
+});
 
 // Damage component - entities that have been hit and should take damage
 export const Damage = defineComponent({
@@ -71,6 +73,11 @@ export const Impulse = defineComponent({
   y: Types.f32,         // Y component of impulse force
 });
 
+// CollisionDelay component - entities that have collision disabled for a period
+export const CollisionDelay = defineComponent({
+  timeLeft: Types.f32,  // Time remaining before collision is enabled
+});
+
 // Default export to ensure this is recognized as a module
 export default {
   Position,
@@ -89,4 +96,5 @@ export default {
   Mass,
   Friction,
   Impulse,
+  CollisionDelay,
 };

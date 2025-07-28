@@ -3,6 +3,7 @@ import { world } from "./ecs/world";
 import { setupGame } from "./game/setupGame";
 import { runSystems } from "./ecs/systems";
 import { setupInput } from "./input/input";
+import { ProfilingUI } from "./ui/profilingUI";
 
 async function initGame() {
   const app = new PIXI.Application();
@@ -22,8 +23,15 @@ async function initGame() {
 
   setupGame(world, app); // create ship, asteroids, etc.
 
+  // Create profiling UI
+  const profilingUI = new ProfilingUI(app);
+
+  // Add this line to limit FPS
+  app.ticker.maxFPS = 60;
+
   app.ticker.add((ticker) => {
     runSystems(world, ticker.deltaTime, app);
+    profilingUI.update(ticker.FPS);
   });
 }
 

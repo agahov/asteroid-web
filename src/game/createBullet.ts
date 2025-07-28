@@ -1,5 +1,5 @@
 import { addComponent, addEntity } from "bitecs";
-import { Position, Velocity, Sprite, Bullet, Lifetime, Rotation, Asteroid, Collision, Hiter, Mass } from "../ecs/components";
+import { Position, Velocity, Sprite, Bullet, Lifetime, Rotation, Asteroid, Collision, Hiter, Mass, Health } from "../ecs/components";
 import * as PIXI from "pixi.js";
 import { type GameWorld } from "../ecs/world";
 import { COLLISION_GROUPS, COLLISION_MASKS } from "../ecs/collisionGroups";
@@ -22,6 +22,7 @@ console.log("createBullet", originId);
   addComponent(world, Collision, bullet);
   addComponent(world, Hiter, bullet);
   addComponent(world, Mass, bullet);
+  addComponent(world, Health, bullet);
 
   Position.x[bullet] = x;
   Position.y[bullet] = y;
@@ -41,6 +42,13 @@ console.log("createBullet", originId);
 
   // Set mass properties
   Mass.value[bullet] = 0.1; // Bullets are very light
+
+  // Set damage value
+  Hiter.value[bullet] = 10; // Bullets deal 1 damage
+
+  // Set health values
+  Health.current[bullet] = 1; // Bullets have 1 health
+  Health.max[bullet] = 1;     // Bullets have 1 max health
 
   // Create visual
   const graphic = new PIXI.Graphics();

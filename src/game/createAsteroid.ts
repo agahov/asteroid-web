@@ -1,17 +1,18 @@
 import { addEntity, addComponent } from "bitecs";
 import { type GameWorld } from "../ecs/world";
 import * as PIXI from "pixi.js";
-import { Position, Velocity, Sprite, Asteroid, Rotation, Player, Input, Collision, Health, Hiter, Mass, Friction } from "../ecs/components";
+import { Position, Velocity, Sprite, Asteroid, Rotation, Player, Input, Collision, Health, Hiter, Mass, Friction, CollisionDelay } from "../ecs/components";
 import { COLLISION_GROUPS, COLLISION_MASKS } from "../ecs/collisionGroups";
 
 export function createAsteroid(world: GameWorld, app: PIXI.Application, options = {}) {
 	console.log("createAsteroid");
-  const { x = 0, y = 0, speed = 1, angle = Math.random() * Math.PI * 2, radius: customRadius } = options as {
+  const { x = 0, y = 0, speed = 1, angle = Math.random() * Math.PI * 2, radius: customRadius, collisionDelay = 0.5 } = options as {
     x?: number;
     y?: number;
     speed?: number;
     angle?: number;
     radius?: number;
+    collisionDelay?: number;
   };
 
   const ent = addEntity(world);
@@ -28,6 +29,9 @@ export function createAsteroid(world: GameWorld, app: PIXI.Application, options 
   addComponent(world, Mass, ent);
   addComponent(world, Friction, ent);
   
+  // Add collision delay component
+  addComponent(world, CollisionDelay, ent);
+  
   // Set component values
   Position.x[ent] = x;
   Position.y[ent] = y;
@@ -42,20 +46,26 @@ export function createAsteroid(world: GameWorld, app: PIXI.Application, options 
   const maxRadius = 20;
   const radius = customRadius || (minRadius + Math.random() * (maxRadius - minRadius));
   
-  // Set collision properties
+  // Set collision properties - but start with collision disabled
   Collision.radius[ent] = radius; // Use the same radius as visual
   Collision.group[ent] = COLLISION_GROUPS.ASTEROID;
   Collision.mask[ent] = COLLISION_MASKS.ASTEROID;
   
+  // Set collision delay
+  CollisionDelay.timeLeft[ent] = collisionDelay;
+  
   // Set health properties
-  Health.current[ent] = 3; // Asteroids take 3 hits to destroy
-  Health.max[ent] = 3;
+  Health.current[ent] = radius * 2; // Asteroids take 10 hits to destroy
+  Health.max[ent] = radius * 10;
   
   // Set mass properties - mass scales with radius (volume)
   Mass.value[ent] = radius * 0.5; // Heavier asteroids are harder to move
   
   // Set friction properties
   Friction.value[ent] = 0.99; // Asteroids have high friction
+
+  // Set damage value - larger asteroids deal more damage
+  Hiter.value[ent] = radius / 10; // Damage scales with size
 
   // Generate 4-8 random points around the center
   const numPoints = 4 + Math.floor(Math.random() * 5); // 4 to 8 points
@@ -89,6 +99,10 @@ export function createAsteroid(world: GameWorld, app: PIXI.Application, options 
   sprite.anchor.set(0.5);
   sprite.x = Position.x[ent];
   sprite.y = Position.y[ent];
+  
+  // Make asteroid semi-transparent when it has collision delay
+  sprite.alpha = 0.5;
+  
   app.stage.addChild(sprite);
 
   //world.pixiSprites[ent] = sprite;
