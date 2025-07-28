@@ -4,9 +4,10 @@ import * as PIXI from "pixi.js";
 import { type GameWorld } from "../ecs/world";
 import { COLLISION_GROUPS, COLLISION_MASKS } from "../ecs/collisionGroups";
 import { LayerManager, LAYERS } from "../ui/LayerManager";
+import { TextureCache } from "./textureCache";
 
 export function createBullet(world: GameWorld, app: PIXI.Application, originId: number) {
-console.log("createBullet", originId);
+//console.log("createBullet", originId);
   const x = Position.x[originId];
   const y = Position.y[originId];
   const angle = Rotation.angle[originId];
@@ -51,23 +52,19 @@ console.log("createBullet", originId);
   Health.current[bullet] = 1; // Bullets have 1 health
   Health.max[bullet] = 1;     // Bullets have 1 max health
 
-  // Create visual
-  const graphic = new PIXI.Graphics();
-  graphic
-    .circle(0, 0, 2)
-    .fill(0xffffff);
+  // console.log('Bullet components set:', {
+  //   entity: bullet,
+  //   position: { x: Position.x[bullet], y: Position.y[bullet] },
+  //   velocity: { x: Velocity.x[bullet], y: Velocity.y[bullet] },
+  //   rotation: Rotation.angle[bullet],
+  //   sprite: Sprite[bullet],
+  //   bullet: Bullet[bullet],
+  //   lifetime: Lifetime.timeLeft[bullet],
+  // });
 
-  console.log('Bullet components set:', {
-    entity: bullet,
-    position: { x: Position.x[bullet], y: Position.y[bullet] },
-    velocity: { x: Velocity.x[bullet], y: Velocity.y[bullet] },
-    rotation: Rotation.angle[bullet],
-    sprite: Sprite[bullet],
-    bullet: Bullet[bullet],
-    lifetime: Lifetime.timeLeft[bullet],
-  });
-
-  const sprite = new PIXI.Sprite(app.renderer.generateTexture(graphic));
+  // Use cached texture instead of generating new one
+  const texture = TextureCache.getInstance().getBulletTexture(app);
+  const sprite = new PIXI.Sprite(texture);
   sprite.anchor.set(0.5);
   sprite.x = Position.x[bullet];
   sprite.y = Position.y[bullet];

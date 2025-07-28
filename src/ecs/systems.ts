@@ -7,12 +7,11 @@ import { createAsteroid } from "../game/createAsteroid";
 import { createBullet } from "../game/createBullet";
 import { startSystemTimer, endSystemTimer, profilingSystem } from "./profiling";
 
-const spriteQuery = defineQuery([Position, Sprite]);
-const moveQuery = defineQuery([Position, Velocity]);
-const frictionQuery = defineQuery([Position, Velocity, Friction]);
-const playerQuery = defineQuery([Position, Velocity, Rotation, Input, Player]);
+
 
 // Input system - updates input component based on keyboard state
+const playerQuery = defineQuery([Position, Velocity, Rotation, Input, Player]);
+
 function inputSystem(world: GameWorld) {
   startSystemTimer('inputSystem');
   const players = playerQuery(world);
@@ -31,7 +30,6 @@ function inputSystem(world: GameWorld) {
 
 // Player movement system
 function playerMovementSystem(world: GameWorld, deltaTime: number) {
-  console.log('DEBUG - playerMovementSystem - deltaTime:', deltaTime);
   startSystemTimer('playerMovementSystem');
   const players = playerQuery(world);
   for (const id of players) {
@@ -68,8 +66,9 @@ function playerMovementSystem(world: GameWorld, deltaTime: number) {
 }
 
 // Movement system - updates positions based on velocity
+const moveQuery = defineQuery([Position, Velocity]);
+
 function movementSystem(world: GameWorld, deltaTime: number) {
-  console.log('DEBUG - movementSystem - deltaTime:', deltaTime);
   startSystemTimer('movementSystem');
   const ents = moveQuery(world);
   for (const id of ents) {
@@ -81,8 +80,9 @@ function movementSystem(world: GameWorld, deltaTime: number) {
 }
 
 // Friction system - applies friction to entities that have the Friction component
+const frictionQuery = defineQuery([Position, Velocity, Friction]);
+
 function frictionSystem(world: GameWorld, deltaTime: number) {
-  console.log('DEBUG - frictionSystem - deltaTime:', deltaTime);
   startSystemTimer('frictionSystem');
   const ents = frictionQuery(world);
   for (const id of ents) {
@@ -94,9 +94,10 @@ function frictionSystem(world: GameWorld, deltaTime: number) {
 }
 
 // Wrap system - handles screen wrapping for entities
+const wrapQuery = defineQuery([Position]);
+
 function wrapSystem(world: GameWorld, app: PIXI.Application) {
   startSystemTimer('wrapSystem');
-  const wrapQuery = defineQuery([Position]);
   const screenWidth = app.screen.width;
   const screenHeight = app.screen.height;
 
@@ -114,6 +115,8 @@ function wrapSystem(world: GameWorld, app: PIXI.Application) {
 }
 
 // Render system - updates sprite positions and rotations based on component data
+const spriteQuery = defineQuery([Position, Sprite]);
+
 function renderSystem(world: GameWorld) {
   startSystemTimer('renderSystem');
   for (const id of spriteQuery(world)) {
@@ -170,7 +173,6 @@ function generateAsteroidSpeed(): number {
 
 let spawned = false;
 export function asteroidSpawnerSystem(world: GameWorld, dt: number, app: PIXI.Application) {
-  console.log('DEBUG - asteroidSpawnerSystem - dt:', dt);
   if (spawned) {
     return;
   }
@@ -181,7 +183,7 @@ export function asteroidSpawnerSystem(world: GameWorld, dt: number, app: PIXI.Ap
   //   return;
   // }
   // initialized = 30000000;
-  console.log('DEBUG - after reset - initialized:', initialized);
+  //console.log('DEBUG - after reset - initialized:', initialized);
 
   for (let i = 0; i < 100; i++) {
     const x = Math.random() * app.screen.width;
@@ -192,10 +194,8 @@ export function asteroidSpawnerSystem(world: GameWorld, dt: number, app: PIXI.Ap
 }
 
 const lifetimeQuery = defineQuery([Lifetime]);
-const removeMarkQuery = defineQuery([RemoveMark]);
 
 export function lifetimeSystem(world: GameWorld, delta: number) {
-  console.log('DEBUG - lifetimeSystem - delta:', delta);
   startSystemTimer('lifetimeSystem');
   const ents = lifetimeQuery(world);
 
@@ -215,9 +215,10 @@ export function lifetimeSystem(world: GameWorld, delta: number) {
 }
 
 // Asteroid destroyed system - creates smaller asteroids when large ones are destroyed
+const asteroidDestroyedQuery = defineQuery([RemoveMark, Asteroid, Collision, Position, Velocity]);
+
 function asteroidDestroyedSystem(world: GameWorld, app: PIXI.Application) {
   startSystemTimer('asteroidDestroyedSystem');
-  const asteroidDestroyedQuery = defineQuery([RemoveMark, Asteroid, Collision, Position, Velocity]);
   const entities = asteroidDestroyedQuery(world);
   
   for (const id of entities) {
@@ -256,6 +257,8 @@ function asteroidDestroyedSystem(world: GameWorld, app: PIXI.Application) {
 }
 
 // Remove system - removes entities marked for removal
+const removeMarkQuery = defineQuery([RemoveMark]);
+
 export function removeSystem(world: GameWorld) {
   startSystemTimer('removeSystem');
   const entities = removeMarkQuery(world);
@@ -275,13 +278,13 @@ export function removeSystem(world: GameWorld) {
 
 let fireCooldown = 0;
 
+const playerFireQuery = defineQuery([Player, Rotation, Position]);
+
 export function fireSystem(world: GameWorld, delta: number, app: PIXI.Application) {
-  console.log('DEBUG - fireSystem - delta:', delta);
   fireCooldown -= delta / 60;	
    
   
-  const playerQuery = defineQuery([Player, Rotation, Position]);
-  const players = playerQuery(world);
+  const players = playerFireQuery(world);
   
   if (players.length === 0) {
     endSystemTimer('fireSystem', 0);
@@ -302,11 +305,12 @@ export function fireSystem(world: GameWorld, delta: number, app: PIXI.Applicatio
 }
 
 // Hit system - handles collision detection and adds damage to entities
+const hiterQuery = defineQuery([Position, Collision, Hiter, Velocity, Mass, Not(CollisionDelay)]);
+const targetQuery = defineQuery([Position, Collision, Velocity, Mass, Not(CollisionDelay), Not(Damage)]);
+
 function hitSystem(world: GameWorld) {
   startSystemTimer('hitSystem');
   // Use Not(CollisionDelay) to exclude entities with collision delay
-  const hiterQuery = defineQuery([Position, Collision, Hiter, Velocity, Mass, Not(CollisionDelay)]);
-  const targetQuery = defineQuery([Position, Collision, Velocity, Mass, Not(CollisionDelay)]);
   const hiters = hiterQuery(world);
   const targets = targetQuery(world);
   
@@ -335,7 +339,7 @@ function hitSystem(world: GameWorld) {
       const collisionDistance = Collision.radius[hiter] + Collision.radius[target];
       
       if (distance < collisionDistance) {
-        console.log("Hit detected between", hiter, "and", target);
+        //console.log("Hit detected between", hiter, "and", target);
         
         // Add damage component to the target
         addComponent(world, Damage, target);
@@ -381,7 +385,7 @@ function hitSystem(world: GameWorld) {
   }
   
   // Log collision check count for debugging
-  if (collisionChecks > 1000) {
+  if (collisionChecks > 20000) {
     console.warn(`⚠️ High collision checks: ${collisionChecks} (${hiters.length} hiters × ${targets.length} targets)`);
   }
   
@@ -391,9 +395,10 @@ function hitSystem(world: GameWorld) {
 
 
 // Damage system - processes damage and reduces health
+const damageQuery = defineQuery([Damage, Health]);
+
 function damageSystem(world: GameWorld) {
   startSystemTimer('damageSystem');
-  const damageQuery = defineQuery([Damage, Health]);
   const entities = damageQuery(world);
   
   for (const id of entities) {
@@ -402,11 +407,11 @@ function damageSystem(world: GameWorld) {
       // Reduce health by damage amount
       Health.current[id] -= Damage.amount[id];
       
-      console.log(`Entity ${id} took ${Damage.amount[id]} damage. Health: ${Health.current[id]}/${Health.max[id]}`);
+      //console.log(`Entity ${id} took ${Damage.amount[id]} damage. Health: ${Health.current[id]}/${Health.max[id]}`);
       
       // Check if health is below 0
       if (Health.current[id] <= 0) {
-        console.log(`Entity ${id} has died!`);
+        //console.log(`Entity ${id} has died!`);
         addComponent(world, RemoveMark, id);
       }
       
@@ -420,9 +425,10 @@ function damageSystem(world: GameWorld) {
 }
 
 // Collision delay system - removes collision delay component when timer expires
+const collisionDelayQuery = defineQuery([CollisionDelay]);
+
 function collisionDelaySystem(world: GameWorld, deltaTime: number) {
   startSystemTimer('collisionDelaySystem');
-  const collisionDelayQuery = defineQuery([CollisionDelay]);
   const entities = collisionDelayQuery(world);
   
   for (const id of entities) {
@@ -452,64 +458,45 @@ function collisionDelaySystem(world: GameWorld, deltaTime: number) {
 
 
 export function runSystems(world: GameWorld, deltaTime: number, app: PIXI.Application) {
-  const originalDeltaTime = deltaTime; // Make a local copy
-  console.log('DEBUG - runSystems start - originalDeltaTime:', originalDeltaTime);
+  const originalDeltaTime = deltaTime;
+  // console.log('DEBUG - runSystems start - originalDeltaTime:', originalDeltaTime);
   
   startSystemTimer('totalFrame');
   
-  // Run input system first
   inputSystem(world);
-  
-  // Run player movement system
   playerMovementSystem(world, deltaTime);
   
-  console.log('DEBUG - after playerMovementSystem - deltaTime:', deltaTime);
+  // console.log('DEBUG - after playerMovementSystem - deltaTime:', deltaTime);
   
   asteroidSpawnerSystem(world, deltaTime, app);
   
-  console.log('DEBUG - after asteroidSpawnerSystem - deltaTime:', deltaTime);
+  // console.log('DEBUG - after asteroidSpawnerSystem - deltaTime:', deltaTime);
   
-  // Run friction system before movement
   frictionSystem(world, deltaTime);
   
-  console.log('DEBUG - after frictionSystem - deltaTime:', deltaTime);
+  // console.log('DEBUG - after frictionSystem - deltaTime:', deltaTime);
   
-  // Run movement system
   movementSystem(world, deltaTime);
   
-  console.log('DEBUG - after movementSystem - deltaTime:', deltaTime);
+  // console.log('DEBUG - after movementSystem - deltaTime:', deltaTime);
   
   fireSystem(world, deltaTime, app);
   
-  console.log('DEBUG - after fireSystem - deltaTime:', deltaTime);
+  // console.log('DEBUG - after fireSystem - deltaTime:', deltaTime);
   
-  // Run collision delay system
   collisionDelaySystem(world, deltaTime);
-  
-  // Run hit system
   hitSystem(world);
-  
-  // Run damage system
   damageSystem(world);
-  
-  // Run asteroid destroyed system to create smaller asteroids
   asteroidDestroyedSystem(world, app);
-  
-  // Run remove system to clean up marked entities
   removeSystem(world);
-  
-  // Run wrap system
   wrapSystem(world, app);
-
   lifetimeSystem(world, deltaTime);
   
-  console.log('DEBUG - after lifetimeSystem - deltaTime:', deltaTime);
+  // console.log('DEBUG - after lifetimeSystem - deltaTime:', deltaTime);
   
-  // Run render system last
   renderSystem(world);
   
-  // Run profiling system
-  console.log('DEBUG - before profilingSystem - deltaTime:', deltaTime);
+  // console.log('DEBUG - before profilingSystem - deltaTime:', deltaTime);
   profilingSystem(world, deltaTime);
   
   endSystemTimer('totalFrame', 0);

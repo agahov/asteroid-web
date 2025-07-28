@@ -4,10 +4,11 @@ import { Position, Velocity, Sprite, Player, Rotation, Input, Collision, Health,
 import { type GameWorld } from "../ecs/world";
 import { COLLISION_GROUPS, COLLISION_MASKS } from "../ecs/collisionGroups";
 import { LayerManager, LAYERS } from "../ui/LayerManager";
+import { TextureCache } from "./textureCache";
 
 export function createShip(world: GameWorld, app: PIXI.Application) {
   const ship = addEntity(world);
-  console.log('Created ship entity:', ship);
+  //console.log('Created ship entity:', ship);
   
   // Add all components to the entity
   addComponent(world, Position, ship);
@@ -54,25 +55,19 @@ export function createShip(world: GameWorld, app: PIXI.Application) {
   // Set damage value
   Hiter.value[ship] = 50;
 
-  console.log('Ship components set:', {
-    entity: ship,
-    position: { x: Position.x[ship], y: Position.y[ship] },
-    velocity: { x: Velocity.x[ship], y: Velocity.y[ship] },
-    rotation: Rotation.angle[ship],
-    input: { up: Input.up[ship], down: Input.down[ship], left: Input.left[ship], right: Input.right[ship], space: Input.space[ship] },
-    sprite: Sprite[ship],
-    player: Player[ship]
-  });
+  // console.log('Ship components set:', {
+  //   entity: ship,
+  //   position: { x: Position.x[ship], y: Position.y[ship] },
+  //   velocity: { x: Velocity.x[ship], y: Velocity.y[ship] },
+  //   rotation: Rotation.angle[ship],
+  //   input: { up: Input.up[ship], down: Input.down[ship], left: Input.left[ship], right: Input.right[ship], space: Input.space[ship] },
+  //   sprite: Sprite[ship],
+  //   player: Player[ship]
+  // });
 
-  const graphic = new PIXI.Graphics();
-  graphic
-    .moveTo(10, 0)
-    .lineTo(-10, 7)
-    .lineTo(-10, -7)
-    .lineTo(10, 0)
-    .fill(0xffffff);
-
-  const sprite = new PIXI.Sprite(app.renderer.generateTexture(graphic));
+  // Use cached texture instead of generating new one
+  const texture = TextureCache.getInstance().getShipTexture(app);
+  const sprite = new PIXI.Sprite(texture);
   sprite.anchor.set(0.5);
   sprite.x = Position.x[ship];
   sprite.y = Position.y[ship];

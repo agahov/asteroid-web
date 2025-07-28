@@ -5,6 +5,7 @@ import { runSystems } from "./ecs/systems";
 import { setupInput } from "./input/input";
 import { ProfilingUI } from "./ui/profilingUI";
 import { LayerManager } from "./ui/LayerManager";
+import { TextureCache } from "./game/textureCache";
 
 async function initGame() {
   const app = new PIXI.Application();
@@ -36,6 +37,12 @@ async function initGame() {
   app.ticker.add((ticker) => {
     runSystems(world, ticker.deltaTime, app);
     profilingUI.update(ticker.FPS);
+  });
+
+  // Add cleanup for when the page is closed
+  window.addEventListener('beforeunload', () => {
+    TextureCache.getInstance().destroy();
+    app.destroy(true);
   });
 }
 

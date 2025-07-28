@@ -4,9 +4,10 @@ import * as PIXI from "pixi.js";
 import { Position, Velocity, Sprite, Asteroid, Rotation, Player, Input, Collision, Health, Hiter, Mass, Friction, CollisionDelay } from "../ecs/components";
 import { COLLISION_GROUPS, COLLISION_MASKS } from "../ecs/collisionGroups";
 import { LayerManager, LAYERS } from "../ui/LayerManager";
+import { TextureCache } from "./textureCache";
 
 export function createAsteroid(world: GameWorld, app: PIXI.Application, options = {}) {
-	console.log("createAsteroid");
+	//console.log("createAsteroid");
   const { x = 0, y = 0, speed = 1, angle = Math.random() * Math.PI * 2, radius: customRadius, collisionDelay = 0.5 } = options as {
     x?: number;
     y?: number;
@@ -68,36 +69,9 @@ export function createAsteroid(world: GameWorld, app: PIXI.Application, options 
   // Set damage value - larger asteroids deal more damage
   Hiter.value[ent] = radius / 10; // Damage scales with size
 
-  // Generate 4-8 random points around the center
-  const numPoints = 4 + Math.floor(Math.random() * 5); // 4 to 8 points
-  const points: number[] = [];
-  
-  for (let i = 0; i < numPoints; i++) {
-    const angle = (i / numPoints) * Math.PI * 2;
-    const pointRadius = radius * (0.7 + Math.random() * 0.6); // Vary radius by ±30%
-    const px = Math.cos(angle) * pointRadius;
-    const py = Math.sin(angle) * pointRadius;
-    points.push(px, py);
-  }
-
-  const graphic = new PIXI.Graphics();
-  graphic
-    .poly(points)
-    //.stroke({ width: 2, color: 0xffffff })
-    .fill(0xff0000);
-
-//   console.log('Asteroid components set:', {
-//     entity: ent,
-//     position: { x: Position.x[ent], y: Position.y[ent] },
-//     velocity: { x: Velocity.x[ent], y: Velocity.y[ent] },
-//     rotation: Rotation.angle[ent],
-//     sprite: Sprite[ent],
-//     asteroid: Asteroid[ent],
-//     radius: radius,
-//     numPoints: numPoints
-//   });
-
-  const sprite = new PIXI.Sprite(app.renderer.generateTexture(graphic));
+  // Use cached texture instead of generating new one
+  const texture = TextureCache.getInstance().getAsteroidTexture(app, radius);
+  const sprite = new PIXI.Sprite(texture);
   sprite.anchor.set(0.5);
   sprite.x = Position.x[ent];
   sprite.y = Position.y[ent];
@@ -108,6 +82,5 @@ export function createAsteroid(world: GameWorld, app: PIXI.Application, options 
   // Attach to GAME_OBJECTS layer using LayerManager
   LayerManager.getInstance().attachToLayer(LAYERS.GAME_OBJECTS, sprite);
 
-  //world.pixiSprites[ent] = sprite;
   world.pixiSprites.set(ent, sprite);
 }
