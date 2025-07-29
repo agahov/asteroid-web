@@ -2,10 +2,10 @@ import { addEntity, addComponent } from "bitecs";
 import { type GameWorld } from "../ecs/world";
 import * as PIXI from "pixi.js";
 import { 
-  Position, Velocity, Sprite, Lifetime, Particle, Rotation, ScaleAnim
+  Position, Velocity, Sprite, Lifetime, Particle, Rotation, ChainTimer
 } from "../ecs/components";
 import { LayerManager, LAYERS } from "../ui/LayerManager";
-import { TextureCache } from "./textureCache";
+import { TextureCache } from "./TextureCache";
 
 /**
  * Creates damage particles that move from the hit object towards the hitter
@@ -117,28 +117,27 @@ export function createExplosionVFX(world: GameWorld, app: PIXI.Application, opti
   
   // Add components using existing systems
   addComponent(world, Position, ent);
-  addComponent(world, Velocity, ent);
+  //addComponent(world, Velocity, ent);
   addComponent(world, Sprite, ent);
   addComponent(world, Lifetime, ent);
   addComponent(world, Particle, ent); // Just mark as particle
-  addComponent(world, ScaleAnim, ent); // Add scale animation component
+  addComponent(world, ChainTimer, ent); // Add chain timer component
 
   // Set position (stationary)
   Position.x[ent] = x;
   Position.y[ent] = y;
   
   // No velocity for explosion (it just grows in place)
-  Velocity.x[ent] = 0;
-  Velocity.y[ent] = 0;
+//   Velocity.x[ent] = 0;
+//   Velocity.y[ent] = 0;
 
   // Set lifetime
   Lifetime.timeLeft[ent] = lifetime;
 
-  // Set scale animation parameters
-  ScaleAnim.startScale[ent] = 0.1;
-  ScaleAnim.endScale[ent] = maxSize / minSize; // Scale factor to reach maxSize
-  ScaleAnim.duration[ent] = lifetime; // Animation duration matches lifetime
-  ScaleAnim.currentTime[ent] = 0; // Start at beginning
+  // Set chain timer parameters
+  ChainTimer.timeLeft[ent] = lifetime/2; // Start timer for first chain particle
+  ChainTimer.chainCount[ent] = 10; // Spawn 3 chain particles
+  ChainTimer.baseSize[ent] = minSize; // Base size for chain particles
 
   // Create sprite with circle texture
   const texture = TextureCache.getInstance().getExplosionParticleTexture(app, minSize);
@@ -148,8 +147,9 @@ export function createExplosionVFX(world: GameWorld, app: PIXI.Application, opti
   sprite.y = Position.y[ent];
   sprite.alpha = 0.8;
   
-  // Scale up for explosion effect - start small
-  sprite.scale.set(ScaleAnim.startScale[ent], ScaleAnim.startScale[ent]);
+  // Set initial scale based on minSize
+//   const initialScale = minSize / Math.max(texture.width, texture.height);
+//   sprite.scale.set(initialScale, initialScale);
 
   // Attach to GAME_OBJECTS layer
   LayerManager.getInstance().attachToLayer(LAYERS.GAME_OBJECTS, sprite);

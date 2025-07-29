@@ -1,11 +1,13 @@
 import * as PIXI from "pixi.js";
-import { defineQuery, removeEntity, addComponent, removeComponent, Not } from "bitecs";
-import { Position, Sprite, Velocity, Rotation, Input, Player, Lifetime, Collision, Asteroid, Bullet, RemoveMark, Hiter, Damage, Health, Mass, Friction, Impulse, CollisionDelay, Particle, ScaleAnim, FadeComp } from "./components";
+import { defineQuery, removeEntity, addComponent, removeComponent, Not, addEntity } from "bitecs";
+import { Position, Sprite, Velocity, Rotation, Input, Player, Lifetime, Collision, Asteroid, Bullet, RemoveMark, Hiter, Damage, Health, Mass, Friction, Impulse, CollisionDelay, Particle, ChainTimer, FadeComp } from "./components";
 import type { GameWorld } from "./world";
 import { getInputState } from "../input/input";
 import { createAsteroid } from "../game/createAsteroid";
 import { createBullet } from "../game/createBullet";
 import { createDamageVFX, createExplosionVFX, createCombinedVFX } from "../game/createVFX";
+import { TextureCache } from "../game/TextureCache";
+import { LayerManager, LAYERS } from "../ui/LayerManager";
 import { startSystemTimer, endSystemTimer, profilingSystem } from "./profiling";
 
 // Input system - updates input component based on keyboard state
@@ -396,29 +398,72 @@ function collisionDelaySystem(world: GameWorld, deltaTime: number) {
   endSystemTimer('collisionDelaySystem', entities.length);
 }
 
-// Scale animation system - handles scaling animations
-const scaleAnimQuery = defineQuery([ScaleAnim, Sprite]);
 
-function scaleAnimSystem(world: GameWorld, deltaTime: number) {
-  startSystemTimer('scaleAnimSystem');
-  const entities = scaleAnimQuery(world);
+
+// Chain timer system - simple timer for spawning chain particles
+const chainTimerQuery = defineQuery([ChainTimer, Position]);
+
+function chainTimerSystem(world: GameWorld, deltaTime: number, app: PIXI.Application) {
+  startSystemTimer('chainTimerSystem');
+  const entities = chainTimerQuery(world);
   
   for (const id of entities) {
-    ScaleAnim.currentTime[id] += deltaTime / 60;
-    const progress = Math.min(1, ScaleAnim.currentTime[id] / ScaleAnim.duration[id]);
+    ChainTimer.timeLeft[id] -= deltaTime / 60;
     
-    const sprite = world.pixiSprites.get(id);
-    if (sprite) {
-      const currentScale = ScaleAnim.startScale[id] + (ScaleAnim.endScale[id] - ScaleAnim.startScale[id]) * progress;
-      sprite.scale.set(currentScale, currentScale);
+    if (ChainTimer.timeLeft[id] <= 0 && ChainTimer.chainCount[id] > 0 && ChainTimer.chainCount[id] > 0) {
+      // Create a new particle with bigger size
+      const newSize = ChainTimer.baseSize[id] * 1.3; // 50% bigger
+      
+      // Create new particle entity
+      const newEnt = addEntity(world);
+      addComponent(world, Position, newEnt);
+      //addComponent(world, Velocity, newEnt);
+      addComponent(world, Sprite, newEnt);
+      addComponent(world, Lifetime, newEnt);
+      addComponent(world, Particle, newEnt);
+      addComponent(world, ChainTimer, newEnt); // Make this particle also chain-capable
+      
+      // Set position at current entity position
+      Position.x[newEnt] = Position.x[id];
+      Position.y[newEnt] = Position.y[id];
+      
+      // Add some random velocity
+      // const angle = Math.random() * Math.PI * 2;
+      // const speed = 1 + Math.random() * 2;
+      // Velocity.x[newEnt] = Math.cos(angle) * speed;
+      // Velocity.y[newEnt] = Math.sin(angle) * speed;
+      
+      // Set lifetime
+      Lifetime.timeLeft[newEnt] = 0.1 + Math.random() * 0.2;
+      
+      // Set chain timer for the new particle (smaller chain than parent)
+      ChainTimer.timeLeft[newEnt] = 0.1; // Slightly longer delay for chain particles
+      //ChainTimer.chainCount[newEnt] = Math.max(1, ChainTimer.chainCount[id] - 1); // Reduce chain count
+      ChainTimer.chainCount[newEnt] = ChainTimer.chainCount[id] - 1; // Reduce chain count
+      ChainTimer.baseSize[newEnt] = newSize; // Smaller base size for chain particles
+      
+      // Create sprite with bigger size
+      const texture = TextureCache.getInstance().getExplosionParticleTexture(app, newSize);
+      const newSprite = new PIXI.Sprite(texture);
+      newSprite.anchor.set(0.5);
+      newSprite.x = Position.x[newEnt];
+      newSprite.y = Position.y[newEnt];
+      newSprite.alpha = 0.6;
+      
+      // Attach to GAME_OBJECTS layer
+      LayerManager.getInstance().attachToLayer(LAYERS.GAME_OBJECTS, newSprite);
+      world.pixiSprites.set(newEnt, newSprite);
+      
+      // ChainTimer.chainCount[id]--;
+      // ChainTimer.timeLeft[id] = 0.1; // Reset timer for next chain particle
+      removeComponent(world, ChainTimer, id);
     }
     
-    if (progress >= 1) {
-      removeComponent(world, ScaleAnim, id);
+    if (ChainTimer.chainCount[id] <= 0) {
     }
   }
   
-  endSystemTimer('scaleAnimSystem', entities.length);
+  endSystemTimer('chainTimerSystem', entities.length);
 }
 
 // Fade system - handles fade effects
@@ -460,7 +505,7 @@ export function runSystems(world: GameWorld, deltaTime: number, app: PIXI.Applic
   collisionDelaySystem(world, deltaTime);
   
   // Animation systems
-  scaleAnimSystem(world, deltaTime);
+  chainTimerSystem(world, deltaTime, app);
   fadeSystem(world, deltaTime);
   
   hitSystem(world);

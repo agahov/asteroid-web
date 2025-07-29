@@ -4,7 +4,7 @@ import { Position, Velocity, Sprite, Player, Rotation, Input, Collision, Health,
 import { type GameWorld } from "../ecs/world";
 import { COLLISION_GROUPS, COLLISION_MASKS } from "../ecs/collisionGroups";
 import { LayerManager, LAYERS } from "../ui/LayerManager";
-import { TextureCache } from "./textureCache";
+import { TextureCache } from "./TextureCache";
 
 export function createShip(world: GameWorld, app: PIXI.Application) {
   const ship = addEntity(world);

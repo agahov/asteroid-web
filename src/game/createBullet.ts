@@ -4,7 +4,7 @@ import * as PIXI from "pixi.js";
 import { type GameWorld } from "../ecs/world";
 import { COLLISION_GROUPS, COLLISION_MASKS } from "../ecs/collisionGroups";
 import { LayerManager, LAYERS } from "../ui/LayerManager";
-import { TextureCache } from "./textureCache";
+import { TextureCache } from "./TextureCache";
 
 export function createBullet(world: GameWorld, app: PIXI.Application, originId: number) {
 //console.log("createBullet", originId);

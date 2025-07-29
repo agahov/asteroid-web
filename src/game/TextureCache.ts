@@ -108,7 +108,7 @@ export class TextureCache {
           break;
         case 2: // Circle
           if (strokeOnly) {
-            graphic.circle(0, 0, width/2).stroke({ width: 2, color: color });
+            graphic.circle(0, 0, width/2).stroke({ width: 1, pixelLine: true, color: color });
           } else {
             graphic.circle(0, 0, width/2).fill(color);
           }

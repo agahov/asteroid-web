@@ -4,7 +4,7 @@ import * as PIXI from "pixi.js";
 import { Position, Velocity, Sprite, Asteroid, Rotation, Player, Input, Collision, Health, Hiter, Mass, Friction, CollisionDelay } from "../ecs/components";
 import { COLLISION_GROUPS, COLLISION_MASKS } from "../ecs/collisionGroups";
 import { LayerManager, LAYERS } from "../ui/LayerManager";
-import { TextureCache } from "./textureCache";
+import { TextureCache } from "./TextureCache";
 
 export function createAsteroid(world: GameWorld, app: PIXI.Application, options = {}) {
 	//console.log("createAsteroid");

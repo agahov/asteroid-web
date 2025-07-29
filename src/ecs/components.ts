@@ -83,12 +83,11 @@ export const CollisionDelay = defineComponent({
 // Particle component - marks an entity as a particle for VFX
 export const Particle = defineComponent();
 
-// ScaleAnim component - for entities that need scaling animation
-export const ScaleAnim = defineComponent({
-  startScale: Types.f32,  // Starting scale
-  endScale: Types.f32,    // Target scale
-  duration: Types.f32,    // Animation duration in seconds
-  currentTime: Types.f32, // Current time in animation
+// ChainTimer component - simple timer for chain particle spawning
+export const ChainTimer = defineComponent({
+  timeLeft: Types.f32,    // Time remaining before spawning chain particle
+  chainCount: Types.ui8,  // Number of particles to spawn in chain
+  baseSize: Types.f32,    // Base size for chain particles
 });
 
 // FadeComp component - for entities that need fade effects
@@ -119,6 +118,6 @@ export default {
   Impulse,
   CollisionDelay,
   Particle,
-  ScaleAnim,
+  ChainTimer,
   FadeComp,
 };

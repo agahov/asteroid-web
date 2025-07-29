@@ -5,7 +5,7 @@ import { runSystems } from "./ecs/systems";
 import { setupInput } from "./input/input";
 import { ProfilingUI } from "./ui/profilingUI";
 import { LayerManager } from "./ui/LayerManager";
-import { TextureCache } from "./game/textureCache";
+import { TextureCache } from "./game/TextureCache";
 
 async function initGame() {
   const app = new PIXI.Application();
