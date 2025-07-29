@@ -76,4 +76,17 @@ if (!Impulse.x[entityId]) {
 ### 9. Debug and Logging Rules
 - **Comment out debug logs in production**: Use commented `console.log()` statements for development
 - **Monitor performance warnings**: Log collision check counts and other performance metrics
-- **Use conditional logging**: Only log profiling data periodically, not every frame 
+- **Use conditional logging**: Only log profiling data periodically, not every frame
+
+### 10. File Naming Convention Rules
+- **All files must start with lowercase characters**: Use camelCase or kebab-case for filenames
+- **Examples of correct naming**:
+  - `textureCache.ts` ✅
+  - `layerManager.ts` ✅
+  - `createAsteroid.ts` ✅
+  - `collisionGroups.ts` ✅
+- **Examples of incorrect naming**:
+  - `TextureCache.ts` ❌
+  - `LayerManager.ts` ❌
+  - `CreateAsteroid.ts` ❌
+- **Import statements must match the actual filename casing**: Always use the correct filename casing in import statements 

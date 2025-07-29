@@ -49,6 +49,8 @@ export const Hiter = defineComponent({
 // Damage component - entities that have been hit and should take damage
 export const Damage = defineComponent({
   amount: Types.f32,    // Amount of damage to deal
+  hiterX: Types.f32,    // X position of the entity that caused the damage
+  hiterY: Types.f32,    // Y position of the entity that caused the damage
 });
 
 // Health component - entities that have health
@@ -78,6 +80,9 @@ export const CollisionDelay = defineComponent({
   timeLeft: Types.f32,  // Time remaining before collision is enabled
 });
 
+// Particle component - marks an entity as a particle for VFX
+export const Particle = defineComponent();
+
 // Default export to ensure this is recognized as a module
 export default {
   Position,
@@ -97,4 +102,5 @@ export default {
   Friction,
   Impulse,
   CollisionDelay,
+  Particle,
 };
