@@ -61,10 +61,10 @@ export function endSystemTimer(systemName: string, entityCount: number): void {
     }
   }
 }
+const allEntities = defineQuery([]);
 
 export function updateProfilingData(world: GameWorld, frameTime: number): void {
   // Count total entities
-  const allEntities = defineQuery([]);
   profilingData.totalEntities = allEntities(world).length;
   profilingData.frameTime = frameTime * 1000; // Convert seconds to milliseconds
   

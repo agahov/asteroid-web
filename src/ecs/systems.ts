@@ -119,7 +119,8 @@ const spriteQuery = defineQuery([Position, Sprite]);
 
 function renderSystem(world: GameWorld) {
   startSystemTimer('renderSystem');
-  for (const id of spriteQuery(world)) {
+  const entities = spriteQuery(world);
+  for (const id of entities) {
     const sprite = world.pixiSprites.get(id);
     if (sprite) {
       sprite.x = Position.x[id];
