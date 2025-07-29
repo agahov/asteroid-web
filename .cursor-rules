@@ -1,0 +1,79 @@
+## ECS Component Management Rules
+
+When adding a new component to an entity, always use `addComponent(world, ComponentName, entityId)` from bitecs. Never use direct assignment like `ComponentName[entityId] = value` for adding components.
+
+**Correct way:**
+```typescript
+import { addComponent } from "bitecs";
+addComponent(world, RemoveMark, entityId);
+```
+
+**Incorrect way:**
+```typescript
+RemoveMark[entityId] = 1; // This is wrong for adding components
+```
+
+**Note:** Direct assignment is only for modifying existing component data, not for adding components to entities.
+
+## Memory Usage and Performance Optimization Rules
+
+### 1. Component Cleanup Rules
+- **Always remove temporary components after use**: Components like `Damage` should be removed immediately after processing to prevent memory buildup
+- **Use `removeComponent(world, ComponentName, entityId)` for proper cleanup**
+- **Example**: In damage system, always call `removeComponent(world, Damage, id)` after processing damage
+
+### 2. Entity Cleanup Rules
+- **Proper sprite cleanup**: Always destroy PIXI sprites and remove them from the sprite map when removing entities
+- **Two-step cleanup process**:
+  1. Destroy the sprite: `sprite.destroy()`
+  2. Remove from map: `world.pixiSprites.delete(id)`
+  3. Remove entity: `removeEntity(world, id)`
+
+### 3. Collision Optimization Rules
+- **Use bitECS `Not()` queries for exclusions**: Instead of manual checks in loops, use `Not(ComponentName)` in queries
+- **Monitor collision checks**: Log warnings when collision checks exceed thresholds (e.g., 20,000 checks)
+- **Example**:
+```typescript
+const hiterQuery = defineQuery([Position, Collision, Hiter, Velocity, Mass, Not(CollisionDelay)]);
+const targetQuery = defineQuery([Position, Collision, Velocity, Mass, Not(CollisionDelay), Not(Damage)]);
+```
+
+### 4. Temporary Component Management
+- **Add components only when needed**: Check if component exists before adding (`!ComponentName.property[entityId]`)
+- **Initialize component data immediately after adding**:
+```typescript
+if (!Impulse.x[entityId]) {
+  addComponent(world, Impulse, entityId);
+  Impulse.x[entityId] = 0;
+  Impulse.y[entityId] = 0;
+}
+```
+
+### 5. Performance Monitoring Rules
+- **Use profiling system**: Wrap systems with `startSystemTimer()` and `endSystemTimer()`
+- **Track entity counts**: Always pass entity count to `endSystemTimer()` for performance analysis
+- **Monitor frame performance**: Track total entities, frame time, and FPS for optimization insights
+
+### 6. Query Optimization Rules
+- **Define queries outside functions**: Create queries at module level to avoid recreation
+- **Use specific component combinations**: Include only necessary components in queries
+- **Leverage bitECS filtering**: Use `Not()`, `enterQuery()`, and `exitQuery()` for efficient filtering
+
+### 7. Collision Delay System Rules
+- **Use CollisionDelay for newly spawned entities**: Prevents immediate unwanted collisions
+- **Automatic exclusion from collision detection**: Entities with `CollisionDelay` are automatically filtered out
+- **Visual feedback**: Implement alpha transparency during delay period
+- **Component removal**: Remove `CollisionDelay` component when timer expires
+
+### 8. System Execution Order Rules
+- Always run cleanup systems after collision and damage systems:
+  1. `collisionDelaySystem()`
+  2. `hitSystem()`
+  3. `damageSystem()`
+  4. `asteroidDestroyedSystem()`
+  5. `removeSystem()` ← Critical: Run after all systems that mark entities for removal
+
+### 9. Debug and Logging Rules
+- **Comment out debug logs in production**: Use commented `console.log()` statements for development
+- **Monitor performance warnings**: Log collision check counts and other performance metrics
+- **Use conditional logging**: Only log profiling data periodically, not every frame 
