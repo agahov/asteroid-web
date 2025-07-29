@@ -85,24 +85,40 @@ export class TextureCache {
   }
 
   // Get particle texture based on shape and size
-  getParticleTexture(app: PIXI.Application, shape: number, width: number, height: number = width, color: number = 0xffffff): PIXI.Texture {
-    const key = `particle_${shape}_${width}_${height}_${color.toString(16)}`;
+  getParticleTexture(app: PIXI.Application, shape: number, width: number, height: number = width, color: number = 0xffffff, strokeOnly: boolean = false): PIXI.Texture {
+    const key = `particle_${shape}_${width}_${height}_${color.toString(16)}_${strokeOnly}`;
     
     if (!this.textures.has(key)) {
       const graphic = new PIXI.Graphics();
       
       switch (shape) {
         case 0: // Square
-          graphic.rect(-width/2, -height/2, width, height).fill(color);
+          if (strokeOnly) {
+            graphic.rect(-width/2, -height/2, width, height).stroke({ width: 2, color: color });
+          } else {
+            graphic.rect(-width/2, -height/2, width, height).fill(color);
+          }
           break;
         case 1: // Rectangle
-          graphic.rect(-width/2, -height/2, width, height).fill(color);
+          if (strokeOnly) {
+            graphic.rect(-width/2, -height/2, width, height).stroke({ width: 2, color: color });
+          } else {
+            graphic.rect(-width/2, -height/2, width, height).fill(color);
+          }
           break;
         case 2: // Circle
-          graphic.circle(0, 0, width/2).fill(color);
+          if (strokeOnly) {
+            graphic.circle(0, 0, width/2).stroke({ width: 2, color: color });
+          } else {
+            graphic.circle(0, 0, width/2).fill(color);
+          }
           break;
         default:
-          graphic.rect(-width/2, -height/2, width, height).fill(color);
+          if (strokeOnly) {
+            graphic.rect(-width/2, -height/2, width, height).stroke({ width: 2, color: color });
+          } else {
+            graphic.rect(-width/2, -height/2, width, height).fill(color);
+          }
       }
       
       const texture = app.renderer.generateTexture(graphic);
@@ -122,11 +138,9 @@ export class TextureCache {
     return this.getParticleTexture(app, 1, size * 2, size, colors[colorIndex]); // Rectangle shape
   }
 
-  // Get explosion particle texture (circles)
+  // Get explosion particle texture (white circle contours)
   getExplosionParticleTexture(app: PIXI.Application, size: number = 1): PIXI.Texture {
-    const colors = [0xffff44, 0xff8844, 0xff4444, 0xff4488]; // Yellow to red/purple gradient
-    const colorIndex = Math.floor(Math.random() * colors.length);
-    return this.getParticleTexture(app, 2, size * 2, size * 2, colors[colorIndex]); // Circle shape
+    return this.getParticleTexture(app, 2, size * 2, size * 2, 0xffffff, true); // White circle contour
   }
 
   // Properly destroy all cached textures when shutting down

@@ -2,7 +2,7 @@ import { addEntity, addComponent } from "bitecs";
 import { type GameWorld } from "../ecs/world";
 import * as PIXI from "pixi.js";
 import { 
-  Position, Velocity, Sprite, Lifetime, Particle, Rotation
+  Position, Velocity, Sprite, Lifetime, Particle, Rotation, ScaleAnim
 } from "../ecs/components";
 import { LayerManager, LAYERS } from "../ui/LayerManager";
 import { TextureCache } from "./textureCache";
@@ -109,8 +109,8 @@ export function createExplosionVFX(world: GameWorld, app: PIXI.Application, opti
     x,
     y,
     minSize = 5,
-    maxSize = 50,
-    lifetime = 1.0
+    maxSize = 80,
+    lifetime = 0.4
   } = options;
 
   const ent = addEntity(world);
@@ -121,6 +121,7 @@ export function createExplosionVFX(world: GameWorld, app: PIXI.Application, opti
   addComponent(world, Sprite, ent);
   addComponent(world, Lifetime, ent);
   addComponent(world, Particle, ent); // Just mark as particle
+  addComponent(world, ScaleAnim, ent); // Add scale animation component
 
   // Set position (stationary)
   Position.x[ent] = x;
@@ -133,6 +134,12 @@ export function createExplosionVFX(world: GameWorld, app: PIXI.Application, opti
   // Set lifetime
   Lifetime.timeLeft[ent] = lifetime;
 
+  // Set scale animation parameters
+  ScaleAnim.startScale[ent] = 0.1;
+  ScaleAnim.endScale[ent] = maxSize / minSize; // Scale factor to reach maxSize
+  ScaleAnim.duration[ent] = lifetime; // Animation duration matches lifetime
+  ScaleAnim.currentTime[ent] = 0; // Start at beginning
+
   // Create sprite with circle texture
   const texture = TextureCache.getInstance().getExplosionParticleTexture(app, minSize);
   const sprite = new PIXI.Sprite(texture);
@@ -141,8 +148,8 @@ export function createExplosionVFX(world: GameWorld, app: PIXI.Application, opti
   sprite.y = Position.y[ent];
   sprite.alpha = 0.8;
   
-  // Scale up for explosion effect
-  sprite.scale.set(1, 1);
+  // Scale up for explosion effect - start small
+  sprite.scale.set(ScaleAnim.startScale[ent], ScaleAnim.startScale[ent]);
 
   // Attach to GAME_OBJECTS layer
   LayerManager.getInstance().attachToLayer(LAYERS.GAME_OBJECTS, sprite);

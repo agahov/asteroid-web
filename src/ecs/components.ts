@@ -83,6 +83,22 @@ export const CollisionDelay = defineComponent({
 // Particle component - marks an entity as a particle for VFX
 export const Particle = defineComponent();
 
+// ScaleAnim component - for entities that need scaling animation
+export const ScaleAnim = defineComponent({
+  startScale: Types.f32,  // Starting scale
+  endScale: Types.f32,    // Target scale
+  duration: Types.f32,    // Animation duration in seconds
+  currentTime: Types.f32, // Current time in animation
+});
+
+// FadeComp component - for entities that need fade effects
+export const FadeComp = defineComponent({
+  startAlpha: Types.f32,  // Starting alpha
+  endAlpha: Types.f32,    // Target alpha
+  duration: Types.f32,    // Fade duration in seconds
+  currentTime: Types.f32, // Current time in fade
+});
+
 // Default export to ensure this is recognized as a module
 export default {
   Position,
@@ -103,4 +119,6 @@ export default {
   Impulse,
   CollisionDelay,
   Particle,
+  ScaleAnim,
+  FadeComp,
 };

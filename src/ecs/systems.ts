@@ -1,14 +1,12 @@
 import * as PIXI from "pixi.js";
 import { defineQuery, removeEntity, addComponent, removeComponent, Not } from "bitecs";
-import { Position, Sprite, Velocity, Rotation, Input, Player, Lifetime, Collision, Asteroid, Bullet, RemoveMark, Hiter, Damage, Health, Mass, Friction, Impulse, CollisionDelay, Particle } from "./components";
+import { Position, Sprite, Velocity, Rotation, Input, Player, Lifetime, Collision, Asteroid, Bullet, RemoveMark, Hiter, Damage, Health, Mass, Friction, Impulse, CollisionDelay, Particle, ScaleAnim, FadeComp } from "./components";
 import type { GameWorld } from "./world";
 import { getInputState } from "../input/input";
 import { createAsteroid } from "../game/createAsteroid";
 import { createBullet } from "../game/createBullet";
 import { createDamageVFX, createExplosionVFX, createCombinedVFX } from "../game/createVFX";
 import { startSystemTimer, endSystemTimer, profilingSystem } from "./profiling";
-
-
 
 // Input system - updates input component based on keyboard state
 const playerQuery = defineQuery([Position, Velocity, Rotation, Input, Player]);
@@ -137,61 +135,18 @@ function renderSystem(world: GameWorld) {
   endSystemTimer('renderSystem', spriteQuery(world).length);
 }
 
-let initialized = 0;
-
-// Predefined speed array with custom distribution:
-// 0 - 80%, 0.1 - 10%, 0.3 - 6%, 0.5 - 3%, 1.0 - 1%
-const SPEED_WEIGHTS = [
-  // 80 zeros (80%)
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 10 zeros
-  // 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 20 zeros
-  // 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 30 zeros
-  // 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 40 zeros
-  // 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 50 zeros
-  // 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 60 zeros
-  // 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 70 zeros
-  // 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 80 zeros
-  
-  // 10 values of 0.1 (10%)
-  0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
-  
-  // 6 values of 0.3 (6%)
-  0.3, 0.3, 0.3, 0.3, 0.3, 0.3,
-  
-  // 3 values of 0.5 (3%)
-  0.5, 0.5, 0.5,
-  
-  // 1 value of 1.0 (1%)
-  1.0
-];
-
-// Utility function to generate speed with more dispersion towards zero
-function generateAsteroidSpeed(): number {
-  // Randomly select from the weighted array
-  //const randomIndex = Math.floor(Math.random() * SPEED_WEIGHTS.length);
-
-  return Math.floor(Math.random() * 1);
-}
-
 let spawned = false;
 export function asteroidSpawnerSystem(world: GameWorld, dt: number, app: PIXI.Application) {
   if (spawned) {
     return;
   }
   spawned = true;
-  // if (initialized >= 0) {
-  //   initialized -= dt;
-  //   console.log('DEBUG - after subtraction - initialized:', initialized);
-  //   return;
-  // }
-  // initialized = 30000000;
-  //console.log('DEBUG - after reset - initialized:', initialized);
 
   for (let i = 0; i < 100; i++) {
     const x = Math.random() * app.screen.width;
     const y = Math.random() * app.screen.height;
-    const speed = generateAsteroidSpeed();
-    createAsteroid(world, app, { x, y, speed, collisionDelay: 1.0 }); // Longer delay for initial asteroids
+    const speed = Math.floor(Math.random() * 1);
+    createAsteroid(world, app, { x, y, speed, collisionDelay: 1.0 });
   }
 }
 
@@ -225,28 +180,28 @@ function asteroidDestroyedSystem(world: GameWorld, app: PIXI.Application) {
   
   for (const id of entities) {
     const currentRadius = Collision.radius[id];
-    const minRadius = 10; // Minimum radius for creating smaller asteroids
+    const minRadius = 10;
     
     // Create explosion VFX when asteroid is destroyed
-    // createCombinedVFX(world, app, {
-    //   x: Position.x[id],
-    //   y: Position.y[id],
-    //   intensity: Math.min(2.0, currentRadius / 15), 
-    //   damageParticles: true,
-    //   explosion: true
-    // });
+    createCombinedVFX(world, app, {
+      x: Position.x[id],
+      y: Position.y[id],
+      hiterX: Position.x[id],
+      hiterY: Position.y[id],
+      intensity: Math.min(2.0, currentRadius / 15), 
+      damageParticles: false,
+      explosion: true
+    });
     
     // Only create smaller asteroids if the destroyed asteroid is large enough
     if (currentRadius > minRadius) {
-      const numAsteroids = 2 + Math.floor(Math.random() * 3); // 2-4 asteroids
-      const newRadius = currentRadius * 0.6; // 60% of original size
+      const numAsteroids = 2 + Math.floor(Math.random() * 3);
+      const newRadius = currentRadius * 0.6;
       
       for (let i = 0; i < numAsteroids; i++) {
-        // Calculate random angle for the new asteroid's velocity
         const angle = Math.random() * Math.PI * 2;
-        const speed = generateAsteroidSpeed()+2; // Range 0 to 1 with dispersion towards zero
+        const speed = Math.floor(Math.random() * 1) + 2;
         
-        // Calculate velocity based on original asteroid's velocity plus some randomness
         const baseVelX = Velocity.x[id];
         const baseVelY = Velocity.y[id];
         const randomVelX = Math.cos(angle) * speed;
@@ -258,7 +213,7 @@ function asteroidDestroyedSystem(world: GameWorld, app: PIXI.Application) {
           speed: Math.sqrt((baseVelX + randomVelX) ** 2 + (baseVelY + randomVelY) ** 2),
           angle: Math.atan2(baseVelY + randomVelY, baseVelX + randomVelX),
           radius: newRadius,
-          collisionDelay: 0.3 // Shorter delay for smaller asteroids
+          collisionDelay: 0.3
         });
       }
     }
@@ -286,7 +241,6 @@ export function removeSystem(world: GameWorld) {
   endSystemTimer('removeSystem', entities.length);
 }
 
-
 let fireCooldown = 0;
 
 const playerFireQuery = defineQuery([Player, Rotation, Position]);
@@ -294,7 +248,6 @@ const playerFireQuery = defineQuery([Player, Rotation, Position]);
 export function fireSystem(world: GameWorld, delta: number, app: PIXI.Application) {
   fireCooldown -= delta / 60;	
    
-  
   const players = playerFireQuery(world);
   
   if (players.length === 0) {
@@ -310,7 +263,7 @@ export function fireSystem(world: GameWorld, delta: number, app: PIXI.Applicatio
   }
 
   createBullet(world, app, playerId);
-  fireCooldown = 0.3; // Fire every 0.3s
+  fireCooldown = 0.3;
   
   endSystemTimer('fireSystem', players.length);
 }
@@ -321,62 +274,44 @@ const targetQuery = defineQuery([Position, Collision, Velocity, Mass, Not(Collis
 
 function hitSystem(world: GameWorld) {
   startSystemTimer('hitSystem');
-  // Use Not(CollisionDelay) to exclude entities with collision delay
   const hiters = hiterQuery(world);
   const targets = targetQuery(world);
   
   let collisionChecks = 0;
   
-  // Check each hiter against all targets for collisions
   for (const hiter of hiters) {
     for (const target of targets) {
       collisionChecks++;
       
-      // Skip if hiter is trying to hit itself
       if (hiter === target) continue;
       
-      // Check if these entities can collide based on their groups and masks
-      // const canCollide = (Collision.group[hiter] & Collision.mask[target]) !== 0 ||
-      //                   (Collision.group[target] & Collision.mask[hiter]) !== 0;
-      
       const canCollide = (Collision.group[target] & Collision.mask[hiter]) !== 0;
-      //const canCollide = (Collision.group[hiter] & Collision.mask[target]) !== 0;
       
       if (!canCollide) continue;
       
-      // Calculate distance between entities
       const dx = Position.x[hiter] - Position.x[target];
       const dy = Position.y[hiter] - Position.y[target];
       const distance = Math.sqrt(dx * dx + dy * dy);
       
-      // Check if they're colliding
       const collisionDistance = Collision.radius[hiter] + Collision.radius[target];
       
       if (distance < collisionDistance) {
-        //console.log("Hit detected between", hiter, "and", target);
-        
-        // Add damage component to the target
         addComponent(world, Damage, target);
-        Damage.amount[target] = Hiter.value[hiter]; // Copy damage value from hiter
-        Damage.hiterX[target] = Position.x[hiter]; // Store hiter position
-        Damage.hiterY[target] = Position.y[hiter]; // Store hiter position
+        Damage.amount[target] = Hiter.value[hiter];
+        Damage.hiterX[target] = Position.x[hiter];
+        Damage.hiterY[target] = Position.y[hiter];
         
-        // Apply impulse forces based on collision
         const hiterMass = Mass.value[hiter] || 1;
         const targetMass = Mass.value[target] || 1;
         
-        // Calculate collision normal
         const nx = dx / distance;
         const ny = dy / distance;
         
-        // Calculate relative velocity
         const relativeVelX = Velocity.x[hiter] - Velocity.x[target];
         const relativeVelY = Velocity.y[hiter] - Velocity.y[target];
         
-        // Calculate impulse magnitude (simplified elastic collision)
         const impulseMagnitude = Math.sqrt(relativeVelX * relativeVelX + relativeVelY * relativeVelY) * 0.5;
         
-        // Apply impulse to both entities
         if (!Impulse.x[hiter]) {
           addComponent(world, Impulse, hiter);
           Impulse.x[hiter] = 0;
@@ -388,27 +323,20 @@ function hitSystem(world: GameWorld) {
           Impulse.y[target] = 0;
         }
         
-        // Apply impulse in opposite directions
         Impulse.x[hiter] -= nx * impulseMagnitude * targetMass;
         Impulse.y[hiter] -= ny * impulseMagnitude * targetMass;
         Impulse.x[target] += nx * impulseMagnitude * hiterMass;
         Impulse.y[target] += ny * impulseMagnitude * hiterMass;
-        
-        // Mark hiter for removal (e.g., bullets disappear after hitting)
-        //addComponent(world, RemoveMark, hiter);
       }
     }
   }
   
-  // Log collision check count for debugging
   if (collisionChecks > 20000) {
     console.warn(`⚠️ High collision checks: ${collisionChecks} (${hiters.length} hiters × ${targets.length} targets)`);
   }
   
   endSystemTimer('hitSystem', hiters.length + targets.length);
 }
-
-
 
 // Damage system - processes damage and reduces health
 const damageQuery = defineQuery([Damage, Health]);
@@ -418,34 +346,21 @@ function damageSystem(world: GameWorld, app: PIXI.Application) {
   const entities = damageQuery(world);
   
   for (const id of entities) {
-    // Only process if damage amount is greater than 0
-    //if (Damage.amount[id] > 0) {
-      // Create damage VFX at the entity's position with bounce effect from hiter
-
-      
-      // Reduce health by damage amount
-      Health.current[id] -= Damage.amount[id];
-      
-      //console.log(`Entity ${id} took ${Damage.amount[id]} damage. Health: ${Health.current[id]}/${Health.max[id]}`);
-      
-      // Check if health is below 0
-      if (Health.current[id] <= 0) {
-        //console.log(`Entity ${id} has died!`);
-        addComponent(world, RemoveMark, id);
-      }else{
-        createDamageVFX(world, app, {
-          x: Position.x[id],
-          y: Position.y[id],
-          hiterX: Damage.hiterX[id],
-          hiterY: Damage.hiterY[id],
-          count: Math.floor(2 + Math.random() * 3), // 4-8 particles
-          speed: 1.5 + Math.random() * 1.5, // Random speed variation
-          size: 2 + Math.random() * 2 // Random size variation
-        });
-      }
-      // Mark damage as processed by setting amount to 0
-      //Damage.amount[id] = 0;
-    //}
+    Health.current[id] -= Damage.amount[id];
+    
+    if (Health.current[id] <= 0) {
+      addComponent(world, RemoveMark, id);
+    } else {
+      createDamageVFX(world, app, {
+        x: Position.x[id],
+        y: Position.y[id],
+        hiterX: Damage.hiterX[id],
+        hiterY: Damage.hiterY[id],
+        count: Math.floor(2 + Math.random() * 3),
+        speed: 1.5 + Math.random() * 1.5,
+        size: 2 + Math.random() * 2
+      });
+    }
     removeComponent(world, Damage, id);
   }
   
@@ -460,21 +375,18 @@ function collisionDelaySystem(world: GameWorld, deltaTime: number) {
   const entities = collisionDelayQuery(world);
   
   for (const id of entities) {
-    CollisionDelay.timeLeft[id] -= deltaTime / 60; // Convert to seconds
+    CollisionDelay.timeLeft[id] -= deltaTime / 60;
     
-    // Update visual opacity during delay period
     const sprite = world.pixiSprites.get(id);
     if (sprite) {
-      // Gradually increase opacity as delay decreases
-      const progress = Math.max(0, 1 - (CollisionDelay.timeLeft[id] / 0.5)); // Assuming 0.5s default delay
-      sprite.alpha = 0.5 + (progress * 0.5); // Fade from 0.5 to 1.0
+      const progress = Math.max(0, 1 - (CollisionDelay.timeLeft[id] / 0.5));
+      sprite.alpha = 0.5 + (progress * 0.5);
     }
     
     if (CollisionDelay.timeLeft[id] <= 0) {
       removeComponent(world, CollisionDelay, id);
       console.log(`Entity ${id} collision delay expired`);
       
-      // Make asteroid fully opaque when collision delay expires
       if (sprite) {
         sprite.alpha = 1.0;
       }
@@ -484,62 +396,72 @@ function collisionDelaySystem(world: GameWorld, deltaTime: number) {
   endSystemTimer('collisionDelaySystem', entities.length);
 }
 
-// Simple particle system - just handles particle-specific behavior
-const particleQuery = defineQuery([Particle, Sprite, Lifetime]);
+// Scale animation system - handles scaling animations
+const scaleAnimQuery = defineQuery([ScaleAnim, Sprite]);
 
-function particleSystem(world: GameWorld, deltaTime: number) {
-  startSystemTimer('particleSystem');
+function scaleAnimSystem(world: GameWorld, deltaTime: number) {
+  startSystemTimer('scaleAnimSystem');
+  const entities = scaleAnimQuery(world);
   
-  const particles = particleQuery(world);
-  for (const id of particles) {
+  for (const id of entities) {
+    ScaleAnim.currentTime[id] += deltaTime / 60;
+    const progress = Math.min(1, ScaleAnim.currentTime[id] / ScaleAnim.duration[id]);
+    
     const sprite = world.pixiSprites.get(id);
     if (sprite) {
-      // Gradually fade out particles over their lifetime
-      const lifetimeProgress = 1 - (Lifetime.timeLeft[id] / 1.0); // Assuming 1 second lifetime
-      sprite.alpha = Math.max(0, 1 - lifetimeProgress);
-      
-      // Optional: Add slight rotation to particles
-      if (sprite.rotation !== undefined) {
-        sprite.rotation += 0.1 * deltaTime / 60;
-      }
+      const currentScale = ScaleAnim.startScale[id] + (ScaleAnim.endScale[id] - ScaleAnim.startScale[id]) * progress;
+      sprite.scale.set(currentScale, currentScale);
+    }
+    
+    if (progress >= 1) {
+      removeComponent(world, ScaleAnim, id);
     }
   }
   
-  endSystemTimer('particleSystem', particles.length);
+  endSystemTimer('scaleAnimSystem', entities.length);
 }
 
+// Fade system - handles fade effects
+const fadeQuery = defineQuery([FadeComp, Sprite]);
+
+function fadeSystem(world: GameWorld, deltaTime: number) {
+  startSystemTimer('fadeSystem');
+  const entities = fadeQuery(world);
+  
+  for (const id of entities) {
+    FadeComp.currentTime[id] += deltaTime / 60;
+    const progress = Math.min(1, FadeComp.currentTime[id] / FadeComp.duration[id]);
+    
+    const sprite = world.pixiSprites.get(id);
+    if (sprite) {
+      const currentAlpha = FadeComp.startAlpha[id] + (FadeComp.endAlpha[id] - FadeComp.startAlpha[id]) * progress;
+      sprite.alpha = currentAlpha;
+    }
+    
+    if (progress >= 1) {
+      removeComponent(world, FadeComp, id);
+    }
+  }
+  
+  endSystemTimer('fadeSystem', entities.length);
+}
 
 export function runSystems(world: GameWorld, deltaTime: number, app: PIXI.Application) {
   const originalDeltaTime = deltaTime;
-  // console.log('DEBUG - runSystems start - originalDeltaTime:', originalDeltaTime);
   
   startSystemTimer('totalFrame');
   
   inputSystem(world);
   playerMovementSystem(world, deltaTime);
-  
-  // console.log('DEBUG - after playerMovementSystem - deltaTime:', deltaTime);
-  
   asteroidSpawnerSystem(world, deltaTime, app);
-  
-  // console.log('DEBUG - after asteroidSpawnerSystem - deltaTime:', deltaTime);
-  
   frictionSystem(world, deltaTime);
-  
-  // console.log('DEBUG - after frictionSystem - deltaTime:', deltaTime);
-  
   movementSystem(world, deltaTime);
-  
-  // console.log('DEBUG - after movementSystem - deltaTime:', deltaTime);
-  
   fireSystem(world, deltaTime, app);
-  
-  // console.log('DEBUG - after fireSystem - deltaTime:', deltaTime);
-  
   collisionDelaySystem(world, deltaTime);
   
-  // Handle particle VFX
-  particleSystem(world, deltaTime);
+  // Animation systems
+  scaleAnimSystem(world, deltaTime);
+  fadeSystem(world, deltaTime);
   
   hitSystem(world);
   damageSystem(world, app);
@@ -547,12 +469,8 @@ export function runSystems(world: GameWorld, deltaTime: number, app: PIXI.Applic
   removeSystem(world);
   wrapSystem(world, app);
   lifetimeSystem(world, deltaTime);
-  
-  // console.log('DEBUG - after lifetimeSystem - deltaTime:', deltaTime);
-  
   renderSystem(world);
   
-  // console.log('DEBUG - before profilingSystem - deltaTime:', deltaTime);
   profilingSystem(world, deltaTime);
   
   endSystemTimer('totalFrame', 0);
