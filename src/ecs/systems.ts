@@ -185,14 +185,11 @@ function asteroidDestroyedSystem(world: GameWorld, app: PIXI.Application) {
     const minRadius = 10;
     
     // Create explosion VFX when asteroid is destroyed
-    createCombinedVFX(world, app, {
+    createExplosionVFX(world, app, {
       x: Position.x[id],
       y: Position.y[id],
-      hiterX: Position.x[id],
-      hiterY: Position.y[id],
-      intensity: Math.min(2.0, currentRadius / 15), 
-      damageParticles: false,
-      explosion: true
+      minSize: currentRadius,
+      lifetime: 1.0
     });
     
     // Only create smaller asteroids if the destroyed asteroid is large enough
@@ -410,9 +407,9 @@ function chainTimerSystem(world: GameWorld, deltaTime: number, app: PIXI.Applica
   for (const id of entities) {
     ChainTimer.timeLeft[id] -= deltaTime / 60;
     
-    if (ChainTimer.timeLeft[id] <= 0 && ChainTimer.chainCount[id] > 0 && ChainTimer.chainCount[id] > 0) {
+    if (ChainTimer.timeLeft[id] <= 0 && ChainTimer.chainCount[id] > 0) {
       // Create a new particle with bigger size
-      const newSize = ChainTimer.baseSize[id] * 1.3; // 50% bigger
+      const newSize = ChainTimer.baseSize[id] * 1.5; // 50% bigger
       
       // Create new particle entity
       const newEnt = addEntity(world);
@@ -427,14 +424,11 @@ function chainTimerSystem(world: GameWorld, deltaTime: number, app: PIXI.Applica
       Position.x[newEnt] = Position.x[id];
       Position.y[newEnt] = Position.y[id];
       
-      // Add some random velocity
-      // const angle = Math.random() * Math.PI * 2;
-      // const speed = 1 + Math.random() * 2;
-      // Velocity.x[newEnt] = Math.cos(angle) * speed;
-      // Velocity.y[newEnt] = Math.sin(angle) * speed;
+      
       
       // Set lifetime
-      Lifetime.timeLeft[newEnt] = 0.1 + Math.random() * 0.2;
+      //Lifetime.timeLeft[newEnt] = 0.1 + Math.random() * 0.1;
+      Lifetime.timeLeft[newEnt] = Lifetime.timeLeft[id] - 0.2;
       
       // Set chain timer for the new particle (smaller chain than parent)
       ChainTimer.timeLeft[newEnt] = 0.1; // Slightly longer delay for chain particles

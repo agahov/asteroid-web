@@ -102,14 +102,13 @@ export function createExplosionVFX(world: GameWorld, app: PIXI.Application, opti
   x: number;
   y: number;
   minSize?: number;
-  maxSize?: number;
   lifetime?: number;
+
 }) {
   const {
     x,
     y,
-    minSize = 5,
-    maxSize = 80,
+    minSize = 3,
     lifetime = 0.4
   } = options;
 
@@ -133,10 +132,13 @@ export function createExplosionVFX(world: GameWorld, app: PIXI.Application, opti
 
   // Set lifetime
   Lifetime.timeLeft[ent] = lifetime;
+  //Lifetime.timeLeft[ent] = 0.1 + Math.random() * 0.1;
+  
 
   // Set chain timer parameters
-  ChainTimer.timeLeft[ent] = lifetime/2; // Start timer for first chain particle
-  ChainTimer.chainCount[ent] = 10; // Spawn 3 chain particles
+  ChainTimer.timeLeft[ent] = 0.1; // Start timer for first chain particle
+  ChainTimer.chainCount[ent] = 3;
+  //ChainTimer.chainCount[ent] = 2+ Math.floor(minSize/10); // Spawn 3 chain particles
   ChainTimer.baseSize[ent] = minSize; // Base size for chain particles
 
   // Create sprite with circle texture
@@ -145,7 +147,7 @@ export function createExplosionVFX(world: GameWorld, app: PIXI.Application, opti
   sprite.anchor.set(0.5);
   sprite.x = Position.x[ent];
   sprite.y = Position.y[ent];
-  sprite.alpha = 0.8;
+  sprite.alpha = 0.6;
   
   // Set initial scale based on minSize
 //   const initialScale = minSize / Math.max(texture.width, texture.height);
@@ -167,6 +169,7 @@ export function createCombinedVFX(world: GameWorld, app: PIXI.Application, optio
   y: number;
   hiterX: number;
   hiterY: number;
+  size?: number;
   damageParticles?: boolean;
   explosion?: boolean;
   intensity?: number;
@@ -176,6 +179,7 @@ export function createCombinedVFX(world: GameWorld, app: PIXI.Application, optio
     y,
     hiterX,
     hiterY,
+	size = 3,
     damageParticles = true,
     explosion = true,
     intensity = 1.0
@@ -189,7 +193,7 @@ export function createCombinedVFX(world: GameWorld, app: PIXI.Application, optio
       hiterY,
       count: Math.floor(8 * intensity),
       speed: 2 * intensity,
-      lifetime: 1.5,
+      lifetime: .1,
       size: 3
     });
   }
@@ -198,8 +202,8 @@ export function createCombinedVFX(world: GameWorld, app: PIXI.Application, optio
     createExplosionVFX(world, app, {
       x,
       y,
-      maxSize: 30 * intensity,
-      lifetime: 0.8
+      minSize: size,
+      lifetime: .4
     });
   }
 } 
