@@ -9,7 +9,7 @@ class RenderLayer extends PIXI.Container {
     this.zIndex = zIndex;
   }
 
-  attach(element: PIXI.Container | PIXI.Graphics | PIXI.Text | PIXI.Sprite) {
+  attach(element: PIXI.Container | PIXI.Graphics | PIXI.Text | PIXI.Sprite | PIXI.Mesh) {
     this.addChild(element);
   }
 }
@@ -49,7 +49,7 @@ export class LayerManager {
     return this.layers.get(name);
   }
 
-  attachToLayer(layerName: string, element: PIXI.Container | PIXI.Graphics | PIXI.Text | PIXI.Sprite) {
+  attachToLayer(layerName: string, element: PIXI.Container | PIXI.Graphics | PIXI.Text | PIXI.Sprite | PIXI.Mesh) {
     const layer = this.getLayer(layerName);
     if (layer) {
       layer.attach(element);

@@ -2,10 +2,11 @@ import { addEntity, addComponent } from "bitecs";
 import { type GameWorld } from "../ecs/world";
 import * as PIXI from "pixi.js";
 import { 
-  Position, Velocity, Sprite, Lifetime, Particle, Rotation, ChainTimer
+  Position, Velocity, Sprite, Lifetime, Particle, Rotation, ChainTimer, MeshVFX
 } from "../ecs/components";
 import { LayerManager, LAYERS } from "../ui/LayerManager";
 import { TextureCache } from "./TextureCache";
+import { explosionVertexShader, explosionFragmentShader } from "./shaders";
 
 /**
  * Creates damage particles that move from the hit object towards the hitter
@@ -199,11 +200,73 @@ export function createCombinedVFX(world: GameWorld, app: PIXI.Application, optio
   }
 
   if (explosion) {
-    createExplosionVFX(world, app, {
+    createMeshExplosionVFX(world, app, {
       x,
       y,
-      minSize: size,
-      lifetime: .4
+      size: size * 2,
+      duration: 0.4,
+      intensity: intensity
     });
   }
+} 
+
+/**
+ * Creates a mesh-based explosion effect using shaders
+ * @param world - The game world
+ * @param app - PIXI application
+ * @param options - Configuration options
+ */
+export function createMeshExplosionVFX(world: GameWorld, app: PIXI.Application, options: {
+  x: number;
+  y: number;
+  size?: number;
+  duration?: number;
+  intensity?: number;
+}) {
+  const {
+    x,
+    y,
+    size = 50,
+    duration = 0.4,
+    intensity = 1.0
+  } = options;
+
+  const ent = addEntity(world);
+  
+  // Add components
+  addComponent(world, Position, ent);
+  addComponent(world, Lifetime, ent);
+  addComponent(world, Particle, ent);
+  addComponent(world, MeshVFX, ent);
+
+  // Set position
+  Position.x[ent] = x;
+  Position.y[ent] = y;
+
+  // Set lifetime
+  Lifetime.timeLeft[ent] = duration;
+
+  // Set mesh VFX parameters
+  const startTime = performance.now() / 1000; // Convert to seconds
+  MeshVFX.startTime[ent] = startTime;
+  MeshVFX.duration[ent] = duration;
+  MeshVFX.currentTime[ent] = 0;
+  MeshVFX.scale[ent] = 1.0;
+  MeshVFX.alpha[ent] = 1.0;
+  MeshVFX.intensity[ent] = intensity;
+
+  // For now, let's use a simple Graphics object with a circle
+  // We'll implement the shader-based approach later when we have the correct PIXI.js v8 API
+  const graphics = new PIXI.Graphics();
+  graphics.beginFill(0xff6600, 0.8); // Orange color with alpha
+  graphics.drawCircle(0, 0, size);
+  graphics.endFill();
+  
+  graphics.x = x;
+  graphics.y = y;
+  graphics.alpha = 1.0;
+
+  // Attach to GAME_OBJECTS layer
+  LayerManager.getInstance().attachToLayer(LAYERS.GAME_OBJECTS, graphics);
+  world.pixiMeshes.set(ent, graphics);
 } 

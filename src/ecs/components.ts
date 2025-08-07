@@ -98,6 +98,16 @@ export const FadeComp = defineComponent({
   currentTime: Types.f32, // Current time in fade
 });
 
+// MeshVFX component - for mesh-based visual effects with shaders
+export const MeshVFX = defineComponent({
+  startTime: Types.f32,     // When the effect started
+  duration: Types.f32,      // Total duration of the effect
+  currentTime: Types.f32,   // Current time in the effect
+  scale: Types.f32,         // Current scale of the mesh
+  alpha: Types.f32,         // Current alpha value
+  intensity: Types.f32,     // Current intensity/brightness
+});
+
 // Default export to ensure this is recognized as a module
 export default {
   Position,
@@ -120,4 +130,5 @@ export default {
   Particle,
   ChainTimer,
   FadeComp,
+  MeshVFX,
 };

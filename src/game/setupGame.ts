@@ -4,5 +4,6 @@ import { createShip } from "./createShip";
 
 export function setupGame(world: GameWorld, app: PIXI.Application) {
   world.pixiSprites = new Map(); // Side-channel storage for Sprite references
+  world.pixiMeshes = new Map(); // Side-channel storage for Mesh references
   createShip(world, app);
 }
