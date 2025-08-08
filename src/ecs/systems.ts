@@ -96,7 +96,7 @@ function frictionSystem(world: GameWorld, deltaTime: number) {
 
 // Wrap system - replaced with border bounce and clamp
 const wrapQuery = defineQuery([Position, Velocity, Collision]);
-const borderQuery = defineQuery([Collision, Not(Velocity)]);
+const borderQuery = defineQuery([Collision, Position, Not(Velocity)]);
 
 function wrapSystem(world: GameWorld, app: PIXI.Application) {
   startSystemTimer('wrapSystem');
@@ -108,8 +108,8 @@ function wrapSystem(world: GameWorld, app: PIXI.Application) {
 
   // Outer: static rect, Inner: entities
   for (const bid of staticRects) {
-    const bx = Collision.rectX[bid];
-    const by = Collision.rectY[bid];
+    const bx = Position.x[bid];
+    const by = Position.y[bid];
     const bw = Collision.rectW[bid];
     const bh = Collision.rectH[bid];
 

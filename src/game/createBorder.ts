@@ -29,8 +29,6 @@ export function createBorder(world: GameWorld, app: PIXI.Application): number[] 
     Position.y[ent] = y;
 
     Collision.radius[ent] = 0; // not used for rect
-    Collision.rectX[ent] = x;
-    Collision.rectY[ent] = y;
     Collision.rectW[ent] = w;
     Collision.rectH[ent] = h;
     Collision.group[ent] = COLLISION_GROUPS.STATIC;

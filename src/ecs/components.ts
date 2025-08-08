@@ -36,8 +36,6 @@ export const Collision = defineComponent({
   // Circle collider (for dynamic entities)
   radius: Types.f32,
   // Rect collider (for static border)
-  rectX: Types.f32,
-  rectY: Types.f32,
   rectW: Types.f32,
   rectH: Types.f32,
   // Group and mask
