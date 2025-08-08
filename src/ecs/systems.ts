@@ -1,11 +1,11 @@
 import * as PIXI from "pixi.js";
 import { defineQuery, removeEntity, addComponent, removeComponent, Not, addEntity } from "bitecs";
-import { Position, Sprite, Velocity, Rotation, Input, Player, Lifetime, Collision, Asteroid, Bullet, RemoveMark, Hiter, Damage, Health, Mass, Friction, Impulse, CollisionDelay, Particle, ChainTimer, FadeComp, MeshVFX } from "./components";
+import { Position, Sprite, Velocity, Rotation, Input, Player, Lifetime, Collision, Asteroid, Bullet, RemoveMark, Hiter, Damage, Health, Mass, Friction, Impulse, CollisionDelay, Particle, ChainTimer, FadeComp, GraphicsVFX } from "./components";
 import type { GameWorld } from "./world";
 import { getInputState } from "../input/input";
 import { createAsteroid } from "../game/createAsteroid";
 import { createBullet } from "../game/createBullet";
-import { createDamageVFX, createExplosionVFX, createCombinedVFX, createMeshExplosionVFX } from "../game/createVFX";
+import { createDamageVFX, createExplosionVFX, createCombinedVFX, createGraphicsExplosionVFX } from "../game/createVFX";
 import { TextureCache } from "../game/TextureCache";
 import { COLLISION_GROUPS } from "./collisionGroups";
 import { startSystemTimer, endSystemTimer, profilingSystem } from "./profiling";
@@ -204,36 +204,36 @@ function renderSystem(world: GameWorld) {
   endSystemTimer('renderSystem', spriteQuery(world).length);
 }
 
-// Mesh VFX system - updates mesh-based visual effects
-const meshVFXQuery = defineQuery([Position, MeshVFX, Lifetime]);
+// Graphics VFX system - updates graphics-based visual effects
+const graphicsVFXQuery = defineQuery([Position, GraphicsVFX, Lifetime]);
 
-function meshVFXSystem(world: GameWorld, deltaTime: number) {
-  startSystemTimer('meshVFXSystem');
-  const entities = meshVFXQuery(world);
+function graphicsVFXSystem(world: GameWorld, deltaTime: number) {
+  startSystemTimer('graphicsVFXSystem');
+  const entities = graphicsVFXQuery(world);
   
   for (const id of entities) {
-    const mesh = world.pixiMeshes.get(id);
-    if (mesh) {
+    const graphics = world.pixiGraphics.get(id);
+    if (graphics) {
       // Update current time
-      MeshVFX.currentTime[id] += deltaTime / 60;
+      GraphicsVFX.currentTime[id] += deltaTime / 60;
       
       // Calculate normalized time (0.0 to 1.0)
-      const t = MeshVFX.currentTime[id] / MeshVFX.duration[id];
+      const t = GraphicsVFX.currentTime[id] / GraphicsVFX.duration[id];
       
-      // Update mesh position
-      mesh.x = Position.x[id];
-      mesh.y = Position.y[id];
+      // Update graphics position
+      graphics.x = Position.x[id];
+      graphics.y = Position.y[id];
       
-      // Update mesh properties based on time
-      if (mesh instanceof PIXI.Graphics) {
+      // Update graphics properties based on time
+      if (graphics instanceof PIXI.Graphics) {
         // For now, just update alpha and scale for the graphics object
-        mesh.alpha = Math.max(0, 1.0 - t);
-        mesh.scale.set(1.0 + t * 2.0); // Expand over time
+        graphics.alpha = Math.max(0, 1.0 - t);
+        graphics.scale.set(1.0 + t * 2.0); // Expand over time
       }
     }
   }
   
-  endSystemTimer('meshVFXSystem', entities.length);
+  endSystemTimer('graphicsVFXSystem', entities.length);
 }
 
 let spawned = false;
@@ -266,10 +266,10 @@ export function lifetimeSystem(world: GameWorld, delta: number) {
         world.pixiSprites.delete(id);
       }
       
-      const mesh = world.pixiMeshes.get(id);
-      if (mesh) {
-        mesh.destroy();
-        world.pixiMeshes.delete(id);
+      const graphics = world.pixiGraphics.get(id);
+      if (graphics) {
+        graphics.destroy();
+        world.pixiGraphics.delete(id);
       }
       
       removeEntity(world, id);
@@ -291,7 +291,7 @@ function asteroidDestroyedSystem(world: GameWorld, app: PIXI.Application) {
     const minRadius = 10;
     
     // Create explosion VFX when asteroid is destroyed
-    createMeshExplosionVFX(world, app, {
+    createGraphicsExplosionVFX(world, app, {
       x: Position.x[id],
       y: Position.y[id],
       size: currentRadius * 2,
@@ -608,7 +608,7 @@ export function runSystems(world: GameWorld, deltaTime: number, app: PIXI.Applic
   // Animation systems
   //chainTimerSystem(world, deltaTime, app);
   fadeSystem(world, deltaTime);
-  meshVFXSystem(world, deltaTime);
+  graphicsVFXSystem(world, deltaTime);
   
   hitSystem(world);
   damageSystem(world, app);

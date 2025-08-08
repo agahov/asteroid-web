@@ -5,7 +5,7 @@ import { createBorder } from "./createBorder";
 
 export function setupGame(world: GameWorld, app: PIXI.Application) {
   world.pixiSprites = new Map(); // Side-channel storage for Sprite references
-  world.pixiMeshes = new Map(); // Side-channel storage for Mesh references
+  world.pixiGraphics = new Map(); // Side-channel storage for Graphics references
   createBorder(world, app);
   createShip(world, app);
 }

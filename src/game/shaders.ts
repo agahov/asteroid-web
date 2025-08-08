@@ -36,7 +36,7 @@ void main() {
     
     // Phase 1: Expand smoothly from center (0.0 to 0.7)
     float expandPhase = smoothstep(0.0, 0.7, t);
-    float expandRadius = expandPhase * 0.8; // Expand to 80% of the mesh
+    float expandRadius = expandPhase * 0.8; // Expand to 80% of the graphic
     
     // Phase 2: Collapse into bright flash (0.7 to 1.0)
     float collapsePhase = smoothstep(0.7, 1.0, t);

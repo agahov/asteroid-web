@@ -2,7 +2,7 @@ import { addEntity, addComponent } from "bitecs";
 import { type GameWorld } from "../ecs/world";
 import * as PIXI from "pixi.js";
 import { 
-  Position, Velocity, Sprite, Lifetime, Particle, Rotation, ChainTimer, MeshVFX
+  Position, Velocity, Sprite, Lifetime, Particle, Rotation, ChainTimer, GraphicsVFX
 } from "../ecs/components";
 import { LayerManager, LAYERS } from "../ui/LayerManager";
 import { TextureCache } from "./TextureCache";
@@ -200,7 +200,7 @@ export function createCombinedVFX(world: GameWorld, app: PIXI.Application, optio
   }
 
   if (explosion) {
-    createMeshExplosionVFX(world, app, {
+    createGraphicsExplosionVFX(world, app, {
       x,
       y,
       size: size * 2,
@@ -211,12 +211,12 @@ export function createCombinedVFX(world: GameWorld, app: PIXI.Application, optio
 } 
 
 /**
- * Creates a mesh-based explosion effect using shaders
+ * Creates a graphics-based explosion effect
  * @param world - The game world
  * @param app - PIXI application
  * @param options - Configuration options
  */
-export function createMeshExplosionVFX(world: GameWorld, app: PIXI.Application, options: {
+export function createGraphicsExplosionVFX(world: GameWorld, app: PIXI.Application, options: {
   x: number;
   y: number;
   size?: number;
@@ -237,7 +237,7 @@ export function createMeshExplosionVFX(world: GameWorld, app: PIXI.Application, 
   addComponent(world, Position, ent);
   addComponent(world, Lifetime, ent);
   addComponent(world, Particle, ent);
-  addComponent(world, MeshVFX, ent);
+  addComponent(world, GraphicsVFX, ent);
 
   // Set position
   Position.x[ent] = x;
@@ -246,14 +246,14 @@ export function createMeshExplosionVFX(world: GameWorld, app: PIXI.Application, 
   // Set lifetime
   Lifetime.timeLeft[ent] = duration;
 
-  // Set mesh VFX parameters
+  // Set graphics VFX parameters
   const startTime = performance.now() / 1000; // Convert to seconds
-  MeshVFX.startTime[ent] = startTime;
-  MeshVFX.duration[ent] = duration;
-  MeshVFX.currentTime[ent] = 0;
-  MeshVFX.scale[ent] = 1.0;
-  MeshVFX.alpha[ent] = 1.0;
-  MeshVFX.intensity[ent] = intensity;
+  GraphicsVFX.startTime[ent] = startTime;
+  GraphicsVFX.duration[ent] = duration;
+  GraphicsVFX.currentTime[ent] = 0;
+  GraphicsVFX.scale[ent] = 1.0;
+  GraphicsVFX.alpha[ent] = 1.0;
+  GraphicsVFX.intensity[ent] = intensity;
 
   // For now, let's use a simple Graphics object with a circle
   // We'll implement the shader-based approach later when we have the correct PIXI.js v8 API
@@ -268,5 +268,5 @@ export function createMeshExplosionVFX(world: GameWorld, app: PIXI.Application, 
 
   // Attach to GAME_OBJECTS layer
   LayerManager.getInstance().attachToLayer(LAYERS.GAME_OBJECTS, graphics);
-  world.pixiMeshes.set(ent, graphics);
+  world.pixiGraphics.set(ent, graphics);
 } 
