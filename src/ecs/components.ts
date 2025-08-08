@@ -33,9 +33,16 @@ export const Lifetime = defineComponent({
 
 // Collision component for collision detection
 export const Collision = defineComponent({
-  radius: Types.f32,    // Collision radius
-  group: Types.ui8,     // Collision group (what this entity belongs to)
-  mask: Types.ui8,      // Collision mask (what this entity can collide with)
+  // Circle collider (for dynamic entities)
+  radius: Types.f32,
+  // Rect collider (for static border)
+  rectX: Types.f32,
+  rectY: Types.f32,
+  rectW: Types.f32,
+  rectH: Types.f32,
+  // Group and mask
+  group: Types.ui8,
+  mask: Types.ui8,
 });
 
 // RemoveMark component for marking entities for removal

@@ -7,7 +7,7 @@ import { createAsteroid } from "../game/createAsteroid";
 import { createBullet } from "../game/createBullet";
 import { createDamageVFX, createExplosionVFX, createCombinedVFX, createMeshExplosionVFX } from "../game/createVFX";
 import { TextureCache } from "../game/TextureCache";
-import { LayerManager, LAYERS } from "../ui/LayerManager";
+import { COLLISION_GROUPS } from "./collisionGroups";
 import { startSystemTimer, endSystemTimer, profilingSystem } from "./profiling";
 
 // Input system - updates input component based on keyboard state
@@ -94,22 +94,89 @@ function frictionSystem(world: GameWorld, deltaTime: number) {
   endSystemTimer('frictionSystem', ents.length);
 }
 
-// Wrap system - handles screen wrapping for entities
-const wrapQuery = defineQuery([Position]);
+// Wrap system - replaced with border bounce and clamp
+const wrapQuery = defineQuery([Position, Velocity, Collision]);
+const borderQuery = defineQuery([Collision, Not(Velocity)]);
 
 function wrapSystem(world: GameWorld, app: PIXI.Application) {
   startSystemTimer('wrapSystem');
-  const screenWidth = app.screen.width;
-  const screenHeight = app.screen.height;
+  // First loop: collect static rectangles (entities with Collision and NOT Velocity)
+  const staticRects = borderQuery(world);
 
+  // Second loop: process dynamic entities with Position + Velocity + Collision
   const entities = wrapQuery(world);
 
-  for (const id of entities) {
-    if (Position.x[id] < 0) Position.x[id] = screenWidth;
-    else if (Position.x[id] > screenWidth) Position.x[id] = 0;
+  // Outer: static rect, Inner: entities
+  for (const bid of staticRects) {
+    const bx = Collision.rectX[bid];
+    const by = Collision.rectY[bid];
+    const bw = Collision.rectW[bid];
+    const bh = Collision.rectH[bid];
 
-    if (Position.y[id] < 0) Position.y[id] = screenHeight;
-    else if (Position.y[id] > screenHeight) Position.y[id] = 0;
+    const rectMinX = bx;
+    const rectMaxX = bx + bw;
+    const rectMinY = by;
+    const rectMaxY = by + bh;
+
+    for (const id of entities) {
+      // Respect masks: dynamic entity collides with this static rect?
+      const canCollide = (Collision.group[bid] & Collision.mask[id]) !== 0;
+      if (!canCollide) continue;
+
+      const radius = (Collision.radius[id] || 0);
+      const cx = Position.x[id];
+      const cy = Position.y[id];
+
+      // Circle-rect closest point
+      const closestX = Math.max(rectMinX, Math.min(cx, rectMaxX));
+      const closestY = Math.max(rectMinY, Math.min(cy, rectMaxY));
+      const dx = cx - closestX;
+      const dy = cy - closestY;
+      const distSq = dx * dx + dy * dy;
+      const rSq = radius * radius;
+
+      if (distSq < rSq) {
+        const speed = Math.hypot(Velocity.x[id], Velocity.y[id]);
+        const restitution = Math.min(1.0, 0.5 + 0.1 * speed);
+
+        // If we have a valid normal (outside corner overlap)
+        if (dx !== 0 || dy !== 0) {
+          const dist = Math.sqrt(distSq) || 1e-6;
+          const nx = dx / dist;
+          const ny = dy / dist;
+          const penetration = radius - dist;
+          // Push out along normal
+          Position.x[id] += nx * penetration;
+          Position.y[id] += ny * penetration;
+          // Reflect velocity along normal
+          const vDotN = Velocity.x[id] * nx + Velocity.y[id] * ny;
+          if (vDotN < 0) {
+            Velocity.x[id] -= (1 + restitution) * vDotN * nx;
+            Velocity.y[id] -= (1 + restitution) * vDotN * ny;
+          }
+        } else {
+          // Center is inside rect; resolve along minimal axis to nearest edge
+          const distLeft = Math.abs(cx - rectMinX);
+          const distRight = Math.abs(rectMaxX - cx);
+          const distTop = Math.abs(cy - rectMinY);
+          const distBottom = Math.abs(rectMaxY - cy);
+          const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+          if (minDist === distLeft) {
+            Position.x[id] = rectMinX - radius;
+            if (Velocity.x[id] > 0) { /* moving right into left edge? no reflect */ } else { Velocity.x[id] = -Velocity.x[id] * restitution; }
+          } else if (minDist === distRight) {
+            Position.x[id] = rectMaxX + radius;
+            if (Velocity.x[id] < 0) { Velocity.x[id] = -Velocity.x[id] * restitution; }
+          } else if (minDist === distTop) {
+            Position.y[id] = rectMinY - radius;
+            if (Velocity.y[id] > 0) { /* moving down into top edge? */ } else { Velocity.y[id] = -Velocity.y[id] * restitution; }
+          } else {
+            Position.y[id] = rectMaxY + radius;
+            if (Velocity.y[id] < 0) { Velocity.y[id] = -Velocity.y[id] * restitution; }
+          }
+        }
+      }
+    }
   }
   
   endSystemTimer('wrapSystem', entities.length);
