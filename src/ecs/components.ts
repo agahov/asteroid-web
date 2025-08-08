@@ -22,7 +22,7 @@ export const Input = defineComponent({
   space: Types.ui8,
 });
 
-export const Sprite = defineComponent();
+export const Render = defineComponent();
 export const Player = defineComponent();
 export const Asteroid = defineComponent();
 export const Bullet = defineComponent();
@@ -119,7 +119,7 @@ export default {
   Velocity,
   Rotation,
   Input,
-  Sprite,
+  Render,
   Player,
   Asteroid,
   Bullet,

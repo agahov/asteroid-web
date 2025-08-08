@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import { addEntity, addComponent } from "bitecs";
-import { Position, Velocity, Sprite, Player, Rotation, Input, Collision, Health, Mass, Friction, Hiter } from "../ecs/components";
+import { Position, Velocity, Render, Player, Rotation, Input, Collision, Health, Mass, Friction, Hiter } from "../ecs/components";
 import { type GameWorld } from "../ecs/world";
 import { COLLISION_GROUPS, COLLISION_MASKS } from "../ecs/collisionGroups";
 import { LayerManager, LAYERS } from "../ui/LayerManager";
@@ -15,7 +15,7 @@ export function createShip(world: GameWorld, app: PIXI.Application) {
   addComponent(world, Velocity, ship);
   addComponent(world, Rotation, ship);
   addComponent(world, Input, ship);
-  addComponent(world, Sprite, ship);
+  addComponent(world, Render, ship);
   addComponent(world, Player, ship);
   addComponent(world, Collision, ship);
   addComponent(world, Health, ship);

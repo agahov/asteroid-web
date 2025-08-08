@@ -1,7 +1,7 @@
 import { addEntity, addComponent } from "bitecs";
 import { type GameWorld } from "../ecs/world";
 import * as PIXI from "pixi.js";
-import { Position, Velocity, Sprite, Asteroid, Rotation, Player, Input, Collision, Health, Hiter, Mass, Friction, CollisionDelay } from "../ecs/components";
+import { Position, Velocity, Render, Asteroid, Rotation, Player, Input, Collision, Health, Hiter, Mass, Friction, CollisionDelay } from "../ecs/components";
 import { COLLISION_GROUPS, COLLISION_MASKS } from "../ecs/collisionGroups";
 import { LayerManager, LAYERS } from "../ui/LayerManager";
 import { TextureCache } from "./TextureCache";
@@ -23,7 +23,7 @@ export function createAsteroid(world: GameWorld, app: PIXI.Application, options 
   addComponent(world, Position, ent);
   addComponent(world, Velocity, ent);
   addComponent(world, Rotation, ent);
-  addComponent(world, Sprite, ent);
+  addComponent(world, Render, ent);
   addComponent(world, Asteroid, ent);
   addComponent(world, Collision, ent);
   addComponent(world, Health, ent);

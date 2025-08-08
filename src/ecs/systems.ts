@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import { defineQuery, removeEntity, addComponent, removeComponent, Not, addEntity } from "bitecs";
-import { Position, Sprite, Velocity, Rotation, Input, Player, Lifetime, Collision, Asteroid, Bullet, RemoveMark, Hiter, Damage, Health, Mass, Friction, Impulse, CollisionDelay, Particle, ChainTimer, FadeComp, GraphicsVFX } from "./components";
+import { Position, Render, Velocity, Rotation, Input, Player, Lifetime, Collision, Asteroid, Bullet, RemoveMark, Hiter, Damage, Health, Mass, Friction, Impulse, CollisionDelay, Particle, ChainTimer, FadeComp, GraphicsVFX } from "./components";
 import type { GameWorld } from "./world";
 import { getInputState } from "../input/input";
 import { createAsteroid } from "../game/createAsteroid";
@@ -182,8 +182,8 @@ function wrapSystem(world: GameWorld, app: PIXI.Application) {
   endSystemTimer('wrapSystem', entities.length);
 }
 
-// Render system - updates sprite positions and rotations based on component data
-const spriteQuery = defineQuery([Position, Sprite]);
+// Render system - updates PIXI.DisplayObjects (sprites/graphics) based on component data
+const spriteQuery = defineQuery([Position, Render]);
 
 function renderSystem(world: GameWorld) {
   startSystemTimer('renderSystem');
@@ -198,6 +198,13 @@ function renderSystem(world: GameWorld) {
       if (Rotation.angle[id] !== undefined) {
         sprite.rotation = Rotation.angle[id];
       }
+    }
+
+    // Also update PIXI.Graphics positions if present
+    const graphics = world.pixiGraphics.get(id);
+    if (graphics) {
+      graphics.x = Position.x[id];
+      graphics.y = Position.y[id];
     }
   }
   
@@ -220,9 +227,6 @@ function graphicsVFXSystem(world: GameWorld, deltaTime: number) {
       // Calculate normalized time (0.0 to 1.0)
       const t = GraphicsVFX.currentTime[id] / GraphicsVFX.duration[id];
       
-      // Update graphics position
-      graphics.x = Position.x[id];
-      graphics.y = Position.y[id];
       
       // Update graphics properties based on time
       if (graphics instanceof PIXI.Graphics) {
@@ -568,7 +572,7 @@ function collisionDelaySystem(world: GameWorld, deltaTime: number) {
 // }
 
 // Fade system - handles fade effects
-const fadeQuery = defineQuery([FadeComp, Sprite]);
+const fadeQuery = defineQuery([FadeComp, Render]);
 
 function fadeSystem(world: GameWorld, deltaTime: number) {
   startSystemTimer('fadeSystem');

@@ -2,7 +2,7 @@ import { addEntity, addComponent } from "bitecs";
 import { type GameWorld } from "../ecs/world";
 import * as PIXI from "pixi.js";
 import { 
-  Position, Velocity, Sprite, Lifetime, Particle, Rotation, ChainTimer, GraphicsVFX
+  Position, Velocity, Render, Lifetime, Particle, Rotation, ChainTimer, GraphicsVFX
 } from "../ecs/components";
 import { LayerManager, LAYERS } from "../ui/LayerManager";
 import { TextureCache } from "./TextureCache";
@@ -54,7 +54,7 @@ export function createDamageVFX(world: GameWorld, app: PIXI.Application, options
     // Add components using existing systems
     addComponent(world, Position, ent);
     addComponent(world, Velocity, ent);
-    addComponent(world, Sprite, ent);
+    addComponent(world, Render, ent);
     addComponent(world, Lifetime, ent);
     addComponent(world, Particle, ent); // Just mark as particle
     addComponent(world, Rotation, ent); // Add rotation for spinning particles
@@ -118,7 +118,7 @@ export function createExplosionVFX(world: GameWorld, app: PIXI.Application, opti
   // Add components using existing systems
   addComponent(world, Position, ent);
   //addComponent(world, Velocity, ent);
-  addComponent(world, Sprite, ent);
+  addComponent(world, Render, ent);
   addComponent(world, Lifetime, ent);
   addComponent(world, Particle, ent); // Just mark as particle
   addComponent(world, ChainTimer, ent); // Add chain timer component
@@ -238,6 +238,7 @@ export function createGraphicsExplosionVFX(world: GameWorld, app: PIXI.Applicati
   addComponent(world, Lifetime, ent);
   addComponent(world, Particle, ent);
   addComponent(world, GraphicsVFX, ent);
+  addComponent(world, Render, ent);
 
   // Set position
   Position.x[ent] = x;

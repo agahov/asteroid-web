@@ -1,5 +1,5 @@
 import { addComponent, addEntity } from "bitecs";
-import { Position, Velocity, Sprite, Bullet, Lifetime, Rotation, Asteroid, Collision, Hiter, Mass, Health } from "../ecs/components";
+import { Position, Velocity, Render, Bullet, Lifetime, Rotation, Asteroid, Collision, Hiter, Mass, Health } from "../ecs/components";
 import * as PIXI from "pixi.js";
 import { type GameWorld } from "../ecs/world";
 import { COLLISION_GROUPS, COLLISION_MASKS } from "../ecs/collisionGroups";
@@ -20,7 +20,7 @@ export function createBullet(world: GameWorld, app: PIXI.Application, originId: 
   addComponent(world, Rotation, bullet);
   addComponent(world, Bullet, bullet);
   addComponent(world, Lifetime, bullet);
-  addComponent(world, Sprite, bullet);
+  addComponent(world, Render, bullet);
   addComponent(world, Collision, bullet);
   addComponent(world, Hiter, bullet);
   addComponent(world, Mass, bullet);
