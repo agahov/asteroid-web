@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import { defineQuery, removeEntity, addComponent, removeComponent, Not, addEntity } from "bitecs";
-import { Position, Render, Velocity, Rotation, Input, Player, Lifetime, Collision, Asteroid, Bullet, RemoveMark, Hiter, Damage, Health, Mass, Friction, Impulse, CollisionDelay, Particle, ChainTimer, FadeComp, GraphicsVFX } from "./components";
+import { Position, Render, Velocity, Rotation, Input, Player, Lifetime, Collision, Asteroid, Bullet, RemoveMark, Hiter, Damage, Health, Mass, Friction, Impulse, CollisionDelay, Particle, ChainTimer, FadeComp, GraphicsVFX, Camera } from "./components";
 import type { GameWorld } from "./world";
 import { getInputState } from "../input/input";
 import { createAsteroid } from "../game/createAsteroid";
@@ -188,11 +188,20 @@ const spriteQuery = defineQuery([Position, Render]);
 function renderSystem(world: GameWorld) {
   startSystemTimer('renderSystem');
   const entities = spriteQuery(world);
+  // Calculate camera offset (supports one camera for now)
+  let camX = 0;
+  let camY = 0;
+  const camEnts = cameraQuery(world);
+  if (camEnts.length > 0) {
+    const cid = camEnts[0];
+    camX = Position.x[cid];
+    camY = Position.y[cid];
+  }
   for (const id of entities) {
     const sprite = world.pixiSprites.get(id);
     if (sprite) {
-      sprite.x = Position.x[id];
-      sprite.y = Position.y[id];
+      sprite.x = Position.x[id] - camX;
+      sprite.y = Position.y[id] - camY;
       
       // Update rotation if entity has rotation component
       if (Rotation.angle[id] !== undefined) {
@@ -203,12 +212,63 @@ function renderSystem(world: GameWorld) {
     // Also update PIXI.Graphics positions if present
     const graphics = world.pixiGraphics.get(id);
     if (graphics) {
-      graphics.x = Position.x[id];
-      graphics.y = Position.y[id];
+      graphics.x = Position.x[id] - camX;
+      graphics.y = Position.y[id] - camY;
     }
   }
   
   endSystemTimer('renderSystem', spriteQuery(world).length);
+}
+
+// Camera follow system - keeps the player within an inner rectangle; moves camera when player leaves it
+const cameraQuery = defineQuery([Camera, Position]);
+const playerForCameraQuery = defineQuery([Player, Position]);
+
+function cameraSystem(world: GameWorld, app: PIXI.Application) {
+  startSystemTimer('cameraSystem');
+  const cams = cameraQuery(world);
+  if (cams.length === 0) {
+    endSystemTimer('cameraSystem', 0);
+    return;
+  }
+  const camId = cams[0];
+
+  const players = playerForCameraQuery(world);
+  if (players.length === 0) {
+    endSystemTimer('cameraSystem', 1);
+    return;
+  }
+  const pid = players[0];
+
+  // Screen size defines camera viewport
+  const viewW = app.screen.width;
+  const viewH = app.screen.height;
+  const innerW = Camera.innerW[camId];
+  const innerH = Camera.innerH[camId];
+
+  // Camera position represents world coords mapped to screen origin (0,0).
+  // Define inner rect in screen space centered: size innerW x innerH
+  const innerLeft = (viewW - innerW) / 2;
+  const innerRight = innerLeft + innerW;
+  const innerTop = (viewH - innerH) / 2;
+  const innerBottom = innerTop + innerH;
+
+  // Convert player world -> screen using current camera
+  const playerScreenX = Position.x[pid] - Position.x[camId];
+  const playerScreenY = Position.y[pid] - Position.y[camId];
+
+  let dx = 0;
+  let dy = 0;
+  if (playerScreenX < innerLeft) dx = playerScreenX - innerLeft;
+  else if (playerScreenX > innerRight) dx = playerScreenX - innerRight;
+  if (playerScreenY < innerTop) dy = playerScreenY - innerTop;
+  else if (playerScreenY > innerBottom) dy = playerScreenY - innerBottom;
+
+  // Move camera by that overflow amount so player returns to edge of inner rect
+  Position.x[camId] += dx;
+  Position.y[camId] += dy;
+
+  endSystemTimer('cameraSystem', 1);
 }
 
 // Graphics VFX system - updates graphics-based visual effects
@@ -620,6 +680,7 @@ export function runSystems(world: GameWorld, deltaTime: number, app: PIXI.Applic
   removeSystem(world);
   wrapSystem(world, app);
   lifetimeSystem(world, deltaTime);
+  cameraSystem(world, app);
   renderSystem(world);
   
   profilingSystem(world, deltaTime);

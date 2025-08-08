@@ -6,6 +6,8 @@ import { setupInput } from "./input/input";
 import { ProfilingUI } from "./ui/profilingUI";
 import { LayerManager } from "./ui/LayerManager";
 import { TextureCache } from "./game/TextureCache";
+import { defineQuery } from "bitecs";
+import { Camera } from "./ecs/components";
 
 async function initGame() {
   const app = new PIXI.Application();
@@ -38,6 +40,19 @@ async function initGame() {
     runSystems(world, ticker.deltaTime, app);
     profilingUI.update(ticker.FPS);
   });
+
+  // Handle window resize: resize canvas and update camera inner rectangle
+  const cameraQuery = defineQuery([Camera]);
+  function handleResize() {
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    const cams = cameraQuery(world);
+    if (cams.length > 0) {
+      const camId = cams[0];
+      Camera.innerW[camId] = app.screen.width / 3;
+      Camera.innerH[camId] = app.screen.height / 3;
+    }
+  }
+  window.addEventListener('resize', handleResize);
 
   // Add cleanup for when the page is closed
   window.addEventListener('beforeunload', () => {

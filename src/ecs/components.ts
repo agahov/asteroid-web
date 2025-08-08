@@ -113,6 +113,12 @@ export const GraphicsVFX = defineComponent({
   intensity: Types.f32,     // Current intensity/brightness
 });
 
+// Camera component - stores camera-specific settings
+export const Camera = defineComponent({
+  innerW: Types.f32,        // Width of inner rectangle (safe zone)
+  innerH: Types.f32,        // Height of inner rectangle (safe zone)
+});
+
 // Default export to ensure this is recognized as a module
 export default {
   Position,
@@ -136,4 +142,5 @@ export default {
   ChainTimer,
   FadeComp,
   GraphicsVFX,
+  Camera,
 };
