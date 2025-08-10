@@ -271,17 +271,31 @@ function cameraSystem(world: GameWorld, app: PIXI.Application) {
 
   // Clamp camera to world bounds with offset
   const { width: worldW, height: worldH } = LayerManager.getInstance().getVirtualWorldSize();
-  const offsetX = Camera.offsetX[camId] || 0;
-  const offsetY = Camera.offsetY[camId] || 0;
-  // Camera position represents top-left of the view in world units
-  const minCamX = 0 + offsetX;
-  const minCamY = 0 + offsetY;
-  const maxCamX = Math.max(minCamX, worldW - viewW - offsetX);
-  const maxCamY = Math.max(minCamY, worldH - viewH - offsetY);
-  if (Position.x[camId] < minCamX) Position.x[camId] = minCamX;
-  if (Position.y[camId] < minCamY) Position.y[camId] = minCamY;
-  if (Position.x[camId] > maxCamX) Position.x[camId] = maxCamX;
-  if (Position.y[camId] > maxCamY) Position.y[camId] = maxCamY;
+  const availableX = worldW - viewW;
+  const availableY = worldH - viewH;
+  // Only apply offset when there is scrollable area; cap offset to half of available span to avoid asymmetry
+  const desiredOffsetX = Camera.offsetX[camId] || 0;
+  const desiredOffsetY = Camera.offsetY[camId] || 0;
+  const appliedOffsetX = availableX > 0 ? Math.min(desiredOffsetX, Math.max(0, availableX / 2)) : 0;
+  const appliedOffsetY = availableY > 0 ? Math.min(desiredOffsetY, Math.max(0, availableY / 2)) : 0;
+
+  if (availableX <= 0) {
+    Position.x[camId] = 0;
+  } else {
+    const minCamX = appliedOffsetX;
+    const maxCamX = availableX - appliedOffsetX;
+    if (Position.x[camId] < minCamX) Position.x[camId] = minCamX;
+    if (Position.x[camId] > maxCamX) Position.x[camId] = maxCamX;
+  }
+
+  if (availableY <= 0) {
+    Position.y[camId] = 0;
+  } else {
+    const minCamY = appliedOffsetY;
+    const maxCamY = availableY - appliedOffsetY;
+    if (Position.y[camId] < minCamY) Position.y[camId] = minCamY;
+    if (Position.y[camId] > maxCamY) Position.y[camId] = maxCamY;
+  }
 
   endSystemTimer('cameraSystem', 1);
 }
