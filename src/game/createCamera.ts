@@ -19,6 +19,11 @@ export function createCamera(world: GameWorld, app: PIXI.Application) {
   Camera.innerW[cam] = view.width / 3;
   Camera.innerH[cam] = view.height / 3;
 
+  // Default clamp offset from world bounds (in world units)
+  const clampOffset = 8;
+  Camera.offsetX[cam] = clampOffset;
+  Camera.offsetY[cam] = clampOffset;
+
   return cam;
 }
 

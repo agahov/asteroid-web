@@ -269,6 +269,20 @@ function cameraSystem(world: GameWorld, app: PIXI.Application) {
   Position.x[camId] += dx;
   Position.y[camId] += dy;
 
+  // Clamp camera to world bounds with offset
+  const { width: worldW, height: worldH } = LayerManager.getInstance().getVirtualWorldSize();
+  const offsetX = Camera.offsetX[camId] || 0;
+  const offsetY = Camera.offsetY[camId] || 0;
+  // Camera position represents top-left of the view in world units
+  const minCamX = 0 + offsetX;
+  const minCamY = 0 + offsetY;
+  const maxCamX = Math.max(minCamX, worldW - viewW - offsetX);
+  const maxCamY = Math.max(minCamY, worldH - viewH - offsetY);
+  if (Position.x[camId] < minCamX) Position.x[camId] = minCamX;
+  if (Position.y[camId] < minCamY) Position.y[camId] = minCamY;
+  if (Position.x[camId] > maxCamX) Position.x[camId] = maxCamX;
+  if (Position.y[camId] > maxCamY) Position.y[camId] = maxCamY;
+
   endSystemTimer('cameraSystem', 1);
 }
 

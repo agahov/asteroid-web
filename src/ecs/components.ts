@@ -117,6 +117,8 @@ export const GraphicsVFX = defineComponent({
 export const Camera = defineComponent({
   innerW: Types.f32,        // Width of inner rectangle (safe zone)
   innerH: Types.f32,        // Height of inner rectangle (safe zone)
+  offsetX: Types.f32,       // Clamp margin from world bounds on X
+  offsetY: Types.f32,       // Clamp margin from world bounds on Y
 });
 
 // Border component - marks an entity as a screen border and stores which side it belongs to
