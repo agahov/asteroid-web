@@ -34,24 +34,25 @@ function drawBorderGraphicSegment(
 }
 
 function computeRectForSide(side: number, app: PIXI.Application, thickness: number) {
+  const { width: worldW, height: worldH } = LayerManager.getInstance().getVirtualWorldSize();
   switch (side) {
     // 0: left, 1: right, 2: top, 3: bottom
     case 0:
-      return { x: 0, y: 0, w: thickness, h: app.screen.height };
+      return { x: 0, y: 0, w: thickness, h: worldH };
     case 1:
       return {
-        x: app.screen.width - thickness,
+        x: worldW - thickness,
         y: 0,
         w: thickness,
-        h: app.screen.height,
+        h: worldH,
       };
     case 2:
-      return { x: 0, y: 0, w: app.screen.width, h: thickness };
+      return { x: 0, y: 0, w: worldW, h: thickness };
     case 3:
       return {
         x: 0,
-        y: app.screen.height - thickness,
-        w: app.screen.width,
+        y: worldH - thickness,
+        w: worldW,
         h: thickness,
       };
     default:
@@ -101,14 +102,15 @@ export function createBorder(world: GameWorld, app: PIXI.Application): number[] 
     ents.push(ent);
   }
 
+  const { width: worldW, height: worldH } = LayerManager.getInstance().getVirtualWorldSize();
   // Left
-  addRect(0, 0, BORDER_THICKNESS, app.screen.height, 0);
+  addRect(0, 0, BORDER_THICKNESS, worldH, 0);
   // Right
-  addRect(app.screen.width - BORDER_THICKNESS, 0, BORDER_THICKNESS, app.screen.height, 1);
+  addRect(worldW - BORDER_THICKNESS, 0, BORDER_THICKNESS, worldH, 1);
   // Top
-  addRect(0, 0, app.screen.width, BORDER_THICKNESS, 2);
+  addRect(0, 0, worldW, BORDER_THICKNESS, 2);
   // Bottom
-  addRect(0, app.screen.height - BORDER_THICKNESS, app.screen.width, BORDER_THICKNESS, 3);
+  addRect(0, worldH - BORDER_THICKNESS, worldW, BORDER_THICKNESS, 3);
 
   return ents;
 }

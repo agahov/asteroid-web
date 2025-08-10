@@ -9,6 +9,7 @@ import { createDamageVFX, createExplosionVFX, createCombinedVFX, createGraphicsE
 import { TextureCache } from "../game/TextureCache";
 import { COLLISION_GROUPS } from "./collisionGroups";
 import { startSystemTimer, endSystemTimer, profilingSystem } from "./profiling";
+import { LayerManager } from "../ui/LayerManager";
 
 // Input system - updates input component based on keyboard state
 const playerQuery = defineQuery([Position, Velocity, Rotation, Input, Player]);
@@ -240,20 +241,20 @@ function cameraSystem(world: GameWorld, app: PIXI.Application) {
   }
   const pid = players[0];
 
-  // Screen size defines camera viewport
-  const viewW = app.screen.width;
-  const viewH = app.screen.height;
+  // Use world units for viewport and inner rect
+  const viewWorld = LayerManager.getInstance().getViewSizeInWorld(app.screen.width, app.screen.height);
+  const viewW = viewWorld.width;
+  const viewH = viewWorld.height;
   const innerW = Camera.innerW[camId];
   const innerH = Camera.innerH[camId];
 
-  // Camera position represents world coords mapped to screen origin (0,0).
-  // Define inner rect in screen space centered: size innerW x innerH
+  // Inner rect centered in the view (world units relative to camera origin)
   const innerLeft = (viewW - innerW) / 2;
   const innerRight = innerLeft + innerW;
   const innerTop = (viewH - innerH) / 2;
   const innerBottom = innerTop + innerH;
 
-  // Convert player world -> screen using current camera
+  // Player position relative to camera in world units (container has no offset in camera-only model)
   const playerScreenX = Position.x[pid] - Position.x[camId];
   const playerScreenY = Position.y[pid] - Position.y[camId];
 
@@ -264,7 +265,7 @@ function cameraSystem(world: GameWorld, app: PIXI.Application) {
   if (playerScreenY < innerTop) dy = playerScreenY - innerTop;
   else if (playerScreenY > innerBottom) dy = playerScreenY - innerBottom;
 
-  // Move camera by that overflow amount so player returns to edge of inner rect
+  // Move camera by the overflow amount so the player returns to the edge of the inner rect
   Position.x[camId] += dx;
   Position.y[camId] += dy;
 
@@ -307,9 +308,10 @@ export function asteroidSpawnerSystem(world: GameWorld, dt: number, app: PIXI.Ap
   }
   spawned = true;
 
+  const { width: worldW, height: worldH } = LayerManager.getInstance().getVirtualWorldSize();
   for (let i = 0; i < 100; i++) {
-    const x = Math.random() * app.screen.width;
-    const y = Math.random() * app.screen.height;
+    const x = Math.random() * worldW;
+    const y = Math.random() * worldH;
     const speed = Math.floor(Math.random() * 1);
     createAsteroid(world, app, { x, y, speed, collisionDelay: 1.0 });
   }
@@ -555,7 +557,7 @@ function collisionDelaySystem(world: GameWorld, deltaTime: number) {
     
     if (CollisionDelay.timeLeft[id] <= 0) {
       removeComponent(world, CollisionDelay, id);
-      console.log(`Entity ${id} collision delay expired`);
+      //console.log(`Entity ${id} collision delay expired`);
       
       if (sprite) {
         sprite.alpha = 1.0;

@@ -24,8 +24,10 @@ export function createShip(world: GameWorld, app: PIXI.Application) {
   addComponent(world, Hiter, ship);
   
   // Set component values
-  Position.x[ship] = app.screen.width / 2;
-  Position.y[ship] = app.screen.height / 2;
+  const { width: worldW, height: worldH } = LayerManager.getInstance().getVirtualWorldSize();
+  Position.x[ship] = worldW / 2;
+  Position.y[ship] = worldH / 2;
+  console.log('createShip position', Position.x[ship], Position.y[ship]); 
   Velocity.x[ship] = 0;
   Velocity.y[ship] = 0;
   Rotation.angle[ship] = 0;
