@@ -119,6 +119,11 @@ export const Camera = defineComponent({
   innerH: Types.f32,        // Height of inner rectangle (safe zone)
 });
 
+// Border component - marks an entity as a screen border and stores which side it belongs to
+export const Border = defineComponent({
+  side: Types.ui8,          // 0: left, 1: right, 2: top, 3: bottom
+});
+
 // Default export to ensure this is recognized as a module
 export default {
   Position,
@@ -143,4 +148,5 @@ export default {
   FadeComp,
   GraphicsVFX,
   Camera,
+  Border,
 };
