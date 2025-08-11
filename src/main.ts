@@ -37,7 +37,7 @@ async function initGame() {
   // Configure virtual world and initial scale
   // Example virtual size; can be tuned. Min scale prevents too much zoom-in on small screens
   //LayerManager.getInstance().configureVirtualWorld(1920, 1080, 0.5);
-  LayerManager.getInstance().configureVirtualWorld(600, 800, 0.5);
+  LayerManager.getInstance().configureVirtualWorld(768, 1024, 0.5);
   LayerManager.getInstance().updateScaleForScreen(app.screen.width, app.screen.height);
 
   // Setup input system
