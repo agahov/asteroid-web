@@ -21,3 +21,8 @@ export function isKeyPressed(keyCode: string): boolean {
 export function getInputState(): { [key: string]: boolean } {
   return keys;
 } 
+
+// Programmatic setter for virtual (UI) inputs
+export function setKeyPressed(keyCode: string, pressed: boolean) {
+  keys[keyCode] = pressed;
+}

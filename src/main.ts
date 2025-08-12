@@ -43,6 +43,11 @@ async function initGame() {
   // Setup input system
   setupInput();
 
+  // Mount mobile HTML controls (Vue) after PIXI canvas is ready
+  // Safe on all platforms; CSS can hide on desktop. Optionally gate by matchMedia.
+  const { mountMobileControls } = await import('./ui/mobile/mountInputControls');
+  mountMobileControls();
+
   setupGame(world, app); // create ship, asteroids, etc.
 
   // Create profiling UI
