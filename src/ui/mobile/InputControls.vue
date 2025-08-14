@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
-import { setKeyPressed } from '../../input/input';
+import { setKeyPressed, setJoystickParams } from '../../input/input';
 
 // Virtual key mapping (uses existing ECS key codes)
 const press = (code: string) => setKeyPressed(code, true);
@@ -55,26 +55,22 @@ const thumbStyle = computed(() => ({
 function setMovementFromVector(vx: number, vy: number) {
   const dead = 0.2;
   const mag = Math.hypot(vx, vy);
-  const nx = mag > 0 ? vx / mag : 0;
-  const ny = mag > 0 ? vy / mag : 0;
-
-  const up = ny < -dead;
-  const down = ny > dead;
-  const left = nx < -dead;
-  const right = nx > dead;
-
-  setKeyPressed('KeyW', up);
-  setKeyPressed('KeyS', down);
-  setKeyPressed('KeyA', left);
-  setKeyPressed('KeyD', right);
+  const strength = Math.min(1, mag);
+  if (strength < dead) {
+    setJoystickParams(0, 0);
+    return;
+  }
+  const dir = Math.atan2(vy, vx); // DOM coords: +x right, +y down → matches game angle basis
+  setJoystickParams(dir, strength);
 }
 
 function onStickDown(e: PointerEvent) {
   (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   isActive.value = true;
   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-  originX.value = e.clientX - (rect.left + rect.width / 2);
-  originY.value = e.clientY - (rect.top + rect.height / 2);
+  // Center-based origin so thumb starts from center
+  originX.value = 0;
+  originY.value = 0;
   onStickMove(e);
 }
 
@@ -99,11 +95,12 @@ function onStickUp(e: PointerEvent) {
   isActive.value = false;
   dx.value = 0;
   dy.value = 0;
-  setMovementFromVector(0, 0);
+  setJoystickParams(0, 0);
 }
 
 function releaseAll() {
-  ['KeyW', 'KeyS', 'KeyA', 'KeyD', 'Space'].forEach((c) => setKeyPressed(c, false));
+  ['Space'].forEach((c) => setKeyPressed(c, false));
+  setJoystickParams(0, 0);
 }
 
 const onVis = () => {

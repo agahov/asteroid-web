@@ -2,7 +2,7 @@ import * as PIXI from "pixi.js";
 import { defineQuery, removeEntity, addComponent, removeComponent, Not, addEntity } from "bitecs";
 import { Position, Render, Velocity, Rotation, Input, Player, Lifetime, Collision, Asteroid, Bullet, RemoveMark, Hiter, Damage, Health, Mass, Friction, Impulse, CollisionDelay, Particle, ChainTimer, FadeComp, GraphicsVFX, Camera } from "./components";
 import type { GameWorld } from "./world";
-import { getInputState } from "../input/input";
+import { getInputState, getJoystickParams, isJoystickEnabled } from "../input/input";
 import { createAsteroid } from "../game/createAsteroid";
 import { createBullet } from "../game/createBullet";
 import { createDamageVFX, createExplosionVFX, createCombinedVFX, createGraphicsExplosionVFX } from "../game/createVFX";
@@ -39,21 +39,41 @@ function playerMovementSystem(world: GameWorld, deltaTime: number) {
     const acceleration = Velocity.acceleration[id] || 0;
     const maxSpeed = Velocity.maxSpeed[id] || Infinity;
 
-    // Handle rotation
-    if (Input.left[id]) {
-      Rotation.angle[id] -= rotationSpeed * deltaTime;
-    }
-    if (Input.right[id]) {
-      Rotation.angle[id] += rotationSpeed * deltaTime;
-    }
+    if (isJoystickEnabled()) {
+      const { direction, strength } = getJoystickParams();
+      // Rotate ship to joystick direction with smoothing based on delta angle
+      if (strength > 0) {
+        const current = Rotation.angle[id];
+        let delta = direction - current;
+        if (delta > Math.PI) delta -= Math.PI * 2;
+        if (delta < -Math.PI) delta += Math.PI * 2;
+        const maxTurn = rotationSpeed * deltaTime;
+        const turn = Math.max(-maxTurn, Math.min(maxTurn, delta));
+        Rotation.angle[id] = current + turn;
+      }
 
-    // Handle thrust
-    if (Input.up[id]) {
-      const thrustX = Math.cos(Rotation.angle[id]) * acceleration * deltaTime;
-      const thrustY = Math.sin(Rotation.angle[id]) * acceleration * deltaTime;
-      
-      Velocity.x[id] += thrustX;
-      Velocity.y[id] += thrustY;
+      // Acceleration scaled by joystick strength
+      if (strength > 0) {
+        const thrustX = Math.cos(Rotation.angle[id]) * acceleration * deltaTime * strength;
+        const thrustY = Math.sin(Rotation.angle[id]) * acceleration * deltaTime * strength;
+        Velocity.x[id] += thrustX;
+        Velocity.y[id] += thrustY;
+      }
+    } else {
+      // Keyboard controls
+      if (Input.left[id]) {
+        Rotation.angle[id] -= rotationSpeed * deltaTime;
+      }
+      if (Input.right[id]) {
+        Rotation.angle[id] += rotationSpeed * deltaTime;
+      }
+
+      if (Input.up[id]) {
+        const thrustX = Math.cos(Rotation.angle[id]) * acceleration * deltaTime;
+        const thrustY = Math.sin(Rotation.angle[id]) * acceleration * deltaTime;
+        Velocity.x[id] += thrustX;
+        Velocity.y[id] += thrustY;
+      }
     }
 
     // Limit maximum speed
