@@ -35,9 +35,9 @@ function playerMovementSystem(world: GameWorld, deltaTime: number) {
   startSystemTimer('playerMovementSystem');
   const players = playerQuery(world);
   for (const id of players) {
-    const rotationSpeed = 0.1; // radians per frame
-    const acceleration = 0.5; // pixels per frame squared
-    const maxSpeed = 5; // maximum speed in pixels per frame
+    const rotationSpeed = Rotation.rotationSpeed[id] || 0;
+    const acceleration = Velocity.acceleration[id] || 0;
+    const maxSpeed = Velocity.maxSpeed[id] || Infinity;
 
     // Handle rotation
     if (Input.left[id]) {

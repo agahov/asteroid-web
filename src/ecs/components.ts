@@ -8,10 +8,13 @@ export const Position = defineComponent({
 export const Velocity = defineComponent({
   x: Types.f32,
   y: Types.f32,
+  acceleration: Types.f32,
+  maxSpeed: Types.f32,
 });
 
 export const Rotation = defineComponent({
   angle: Types.f32,
+  rotationSpeed: Types.f32,
 });
 
 export const Input = defineComponent({

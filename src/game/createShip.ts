@@ -30,7 +30,10 @@ export function createShip(world: GameWorld, app: PIXI.Application) {
   console.log('createShip position', Position.x[ship], Position.y[ship]); 
   Velocity.x[ship] = 0;
   Velocity.y[ship] = 0;
+  Velocity.acceleration[ship] = 0.5;
+  Velocity.maxSpeed[ship] = 5;
   Rotation.angle[ship] = 0;
+  Rotation.rotationSpeed[ship] = 0.1;
 
   // Initialize input state
   Input.up[ship] = 0;
