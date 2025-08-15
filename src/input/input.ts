@@ -10,6 +10,13 @@ let joystickDirection = 0;
 let joystickStrength = 0;
 let lastNonZeroJoystickDirection = 0;
 
+// Smooth ease-in curve: slow start, then quicker growth
+function joystickResponseCurve(x: number, k = 2): number {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  return (Math.exp(k * x) - 1) / (Math.exp(k) - 1);
+}
+
 // Setup keyboard event listeners
 export function setupInput() {
   document.addEventListener('keydown', (event) => {
@@ -54,15 +61,14 @@ export function setKeyPressed(keyCode: string, pressed: boolean) {
 // Programmatic setter for virtual joystick
 export function setJoystickParams(directionRadians: number, strength01: number) {
   const clamped = Math.max(0, Math.min(1, strength01));
-  joystickStrength = clamped;
+  const curved = joystickResponseCurve(clamped);
+  joystickStrength = curved;
   if (clamped > 0) {
     joystickDirection = directionRadians;
     lastNonZeroJoystickDirection = directionRadians;
   } else {
-    // keep last direction; do not force to 0/right
     joystickDirection = lastNonZeroJoystickDirection;
   }
-  // Activate joystick mode upon first interaction
   joystickEnabled = true;
   keyboardEnabled = false;
 }

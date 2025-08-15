@@ -1,3 +1,7 @@
+<script setup lang="ts">
+import InputControls from './mobile/InputControls.vue';
+</script>
+
 <template>
   <div class="ui-layer">
     <!-- Controls layer -->
@@ -8,10 +12,6 @@
   </div>
   
 </template>
-
-<script setup lang="ts">
-import InputControls from './mobile/InputControls.vue';
-</script>
 
 <style scoped>
 .ui-layer {

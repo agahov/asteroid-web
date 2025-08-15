@@ -1,36 +1,3 @@
-<template>
-  <div class="mobile-controls" @contextmenu.prevent>
-    <div class="cluster left">
-      <!-- Joystick pad -->
-      <div
-        class="joystick"
-        ref="stickArea"
-        @pointerdown.prevent="onStickDown"
-        @pointermove.prevent="onStickMove"
-        @pointerup.prevent="onStickUp"
-        @pointercancel.prevent="onStickUp"
-        @pointerleave.prevent="onStickUp"
-      >
-        <div class="joystick-thumb" :style="thumbStyle"></div>
-      </div>
-    </div>
-
-    <div class="cluster right">
-      <button
-        class="btn fire"
-        @pointerdown="press('Space')"
-        @pointerup="release('Space')"
-        @pointercancel="release('Space')"
-        @pointerleave="release('Space')"
-      >●</button>
-    </div>
-  </div>
-  
-  <div class="ui-root-slot">
-    <!-- Future: menus, shop, etc. -->
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { setKeyPressed, setJoystickParams } from '../../input/input';
@@ -117,6 +84,39 @@ onBeforeUnmount(() => {
 });
 </script>
 
+<template>
+  <div class="mobile-controls" @contextmenu.prevent>
+    <div class="cluster left">
+      <!-- Joystick pad -->
+      <div
+        class="joystick"
+        ref="stickArea"
+        @pointerdown.prevent="onStickDown"
+        @pointermove.prevent="onStickMove"
+        @pointerup.prevent="onStickUp"
+        @pointercancel.prevent="onStickUp"
+        @pointerleave.prevent="onStickUp"
+      >
+        <div class="joystick-thumb" :style="thumbStyle"></div>
+      </div>
+    </div>
+
+    <div class="cluster right">
+      <button
+        class="btn fire"
+        @pointerdown="press('Space')"
+        @pointerup="release('Space')"
+        @pointercancel="release('Space')"
+        @pointerleave="release('Space')"
+      >●</button>
+    </div>
+  </div>
+  
+  <div class="ui-root-slot">
+    <!-- Future: menus, shop, etc. -->
+  </div>
+</template>
+
 <style scoped>
 .mobile-controls {
   position: fixed;
@@ -177,10 +177,10 @@ onBeforeUnmount(() => {
 .btn.fire { background: #b00c; border-color: #f008; }
 .btn:active { background: #fff3; }
 
-@media (min-width: 900px) {
-  /* hide on desktop; show only on coarse pointers via CSS/JS gate later if desired */
+/* hide on desktop; show only on coarse pointers via CSS/JS gate later if desired */
+/* @media (min-width: 900px) {
   .mobile-controls { display: none; }
-}
+} */
 
 .ui-root-slot {
   position: fixed;

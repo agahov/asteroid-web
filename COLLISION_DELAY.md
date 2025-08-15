@@ -60,3 +60,66 @@ The hit system automatically excludes entities with active collision delay using
 3. **Configurable delays** for different asteroid types
 4. **Smooth gameplay** without jarring instant collisions
 5. **Efficient bitECS usage** with proper query patterns 
+
+# Project Rules
+
+## General Project Description
+
+I want to implement a simple Asteroid game on techstack bitecs and pixi.js
+
+## ECS Component Management Rules
+
+When adding a new component to an entity, always use `addComponent(world, ComponentName, entityId)` from bitecs. Never use direct assignment like `ComponentName[entityId] = value` for adding components.
+
+**Correct way:**
+```typescript
+import { addComponent } from "bitecs";
+addComponent(world, RemoveMark, entityId);
+```
+
+**Incorrect way:**
+```typescript
+RemoveMark[entityId] = 1; // This is wrong for adding components
+```
+
+**Note:** Direct assignment is only for modifying existing component data, not for adding components to entities.
+
+## Vue Component Structure Rules
+
+All Vue components must follow this exact section order:
+
+1. **`<script setup>`** - Script logic and imports
+2. **`<template>`** - HTML template markup  
+3. **`<style>`** - CSS styling
+
+**Correct structure:**
+```vue
+<script setup>
+// imports and component logic here
+</script>
+
+<template>
+  <!-- template markup here -->
+</template>
+
+<style>
+/* styles here */
+</style>
+```
+
+**Incorrect structure:**
+```vue
+<template>
+  <!-- template first - WRONG -->
+</template>
+
+<script setup>
+// script second - WRONG
+</script>
+
+<style>
+/* style third - WRONG */
+</style>
+```
+
+This ordering ensures consistency across all Vue components in the project and follows Vue.js best practices. 
